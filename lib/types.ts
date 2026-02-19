@@ -104,6 +104,12 @@ export interface FormField {
   unit?: string
   width?: "full" | "half" | "third"
   rules?: FieldRule[]
+  temperatureConditional?: {
+    operator: "lt" | "lte" | "gt" | "gte"
+    threshold: number
+    trueLabel: string
+    falseLabel: string
+  }
 }
 
 export interface FormSection {
