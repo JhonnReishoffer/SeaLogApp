@@ -28,6 +28,7 @@ import {
 import { Plus, Trash2, Save, Send, Ship } from "lucide-react"
 import { generateId } from "@/lib/store"
 import type { FormEntry, FormRowData } from "@/lib/types"
+import { validateFieldValue } from "@/lib/form-validation"
 
 // Generate month options
 function getMonthOptions() {
@@ -99,6 +100,7 @@ export default function FormFillingPage() {
   const [status, setStatus] = useState(existingEntry?.status || "rascunho" as const)
   const [saved, setSaved] = useState(false)
   const [entryRef, setEntryRef] = useState(existingEntry?.id || "")
+  const [validationError, setValidationError] = useState<string | null>(null)
 
   // Check if we should load existing entry for this period
   useEffect(() => {
@@ -151,6 +153,18 @@ export default function FormFillingPage() {
 
   function saveEntry(newStatus: "rascunho" | "em_revisao" = "rascunho") {
     if (!currentUser || !selectedVessel || !template) return
+
+    for (const row of rows) {
+      for (const field of allFields) {
+        const error = validateFieldValue(field, row.values)
+        if (error) {
+          setValidationError(`Registro ${rows.indexOf(row) + 1}: ${error}`)
+          return
+        }
+      }
+    }
+
+    setValidationError(null)
 
     const now = new Date().toISOString()
     const entry: FormEntry = {
@@ -303,6 +317,12 @@ export default function FormFillingPage() {
       })()}
 
       {/* Rows */}
+      {validationError && (
+        <Card className="border-destructive/20 bg-destructive/5">
+          <CardContent className="p-4 text-sm text-destructive-foreground">{validationError}</CardContent>
+        </Card>
+      )}
+
       <div className="flex flex-col gap-4">
         {rows.map((row, index) => (
           <Card key={row.id}>

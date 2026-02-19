@@ -47,6 +47,7 @@ interface AppContextType {
 
   // MVP demo helper
   setDemoRole: (role: "SUPER_ADMIN" | "COMPANY_ADMIN" | "USER") => void
+  setDemoCompany: (companyId: string) => void
 
   // Entries
   entries: FormEntry[]
@@ -242,6 +243,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [currentUser]
   )
 
+  const setDemoCompany = useCallback((companyId: string) => {
+    if (!currentUser) return
+    const updated: User = { ...currentUser, companyId }
+    store.updateUser(updated)
+    store.setCurrentUser(updated)
+    setCurrentUser(updated)
+    setVessels(store.getVesselsByCompanyId(companyId))
+    setTemplates(store.getEffectiveTemplatesForCompany(companyId))
+    setSelectedVessel(null)
+    store.setSelectedVessel(null)
+  }, [currentUser])
+
   const refreshCompanyTemplateConfigs = useCallback(() => {
     setCompanyTemplateConfigs(store.getCompanyTemplateConfigs())
     refreshTemplates()
@@ -290,6 +303,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         templates,
         refreshTemplates,
         setDemoRole,
+        setDemoCompany,
         entries,
         refreshEntries,
         createEntry: handleCreateEntry,
