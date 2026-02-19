@@ -3,23 +3,23 @@
 import { usePathname, useRouter } from "next/navigation"
 import { useApp } from "@/components/app-provider"
 import { cn } from "@/lib/utils"
-import { Home, ClipboardList, CheckCircle, Download } from "lucide-react"
+import { Home, ClipboardList, CheckCircle, Download, BarChart3 } from "lucide-react"
 
 const NAV_ITEMS = [
   {
-    label: "Inicio",
+    label: "Início",
     href: "/dashboard",
     icon: Home,
     matchPaths: ["/dashboard"],
   },
   {
-    label: "Formularios",
+    label: "Formulários",
     href: "/formularios",
     icon: ClipboardList,
     matchPaths: ["/formularios"],
   },
   {
-    label: "Revisao",
+    label: "Revisão",
     href: "/revisao",
     icon: CheckCircle,
     matchPaths: ["/revisao"],
@@ -29,6 +29,12 @@ const NAV_ITEMS = [
     href: "/exportar",
     icon: Download,
     matchPaths: ["/exportar"],
+  },
+  {
+    label: "Estatísticas",
+    href: "/estatisticas",
+    icon: BarChart3,
+    matchPaths: ["/estatisticas"],
   },
 ]
 
@@ -40,8 +46,14 @@ export function BottomNav() {
   const canReview =
     currentUser?.role === "SUPER_ADMIN" || currentUser?.role === "NUTRI_ADMIN"
 
+  const canViewStats =
+    currentUser?.role === "SUPER_ADMIN" ||
+    currentUser?.role === "COMPANY_ADMIN" ||
+    currentUser?.role === "NUTRI_ADMIN"
+
   const visibleItems = NAV_ITEMS.filter((item) => {
     if (item.href === "/revisao") return canReview
+    if (item.href === "/estatisticas") return canViewStats
     return true
   })
 

@@ -28,8 +28,15 @@ export function Logo({ size = "md", className, href }: LogoProps) {
       className={cn("flex items-center gap-2 select-none", className)}
       aria-label="Ir para a pagina inicial"
     >
-      <img src={logoImage} alt="Logo SeaNutri" className={cn("w-auto rounded", s.logo)} />
-      <span className={cn("font-semibold tracking-tight text-foreground", s.text)}>SeaLogApp</span>
+      <img src={logoImage} alt="Logo SeaLogApp" className={cn("w-auto rounded", s.logo)} />
+      <span
+        className={cn(
+          "bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-500 bg-clip-text font-extrabold tracking-wide text-transparent drop-shadow-sm",
+          s.text
+        )}
+      >
+        SeaLogApp
+      </span>
     </Link>
   )
 }
