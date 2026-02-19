@@ -6,7 +6,7 @@ import { useApp } from "@/components/app-provider"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { ClipboardList, Plus, ArrowRight } from "lucide-react"
+import { ClipboardList, Plus, ArrowRight, Upload } from "lucide-react"
 
 export default function AdminPlanilhasPage() {
   const router = useRouter()
@@ -39,10 +39,16 @@ export default function AdminPlanilhasPage() {
             <p className="text-sm text-muted-foreground">Crie e edite planilhas globais e selecione as empresas habilitadas</p>
           </div>
         </div>
-        <Button className="gap-2" onClick={() => router.push("/admin/planilhas/nova")}>
-          <Plus className="h-4 w-4" />
-          Nova planilha
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => router.push("/admin/planilhas/importar")}>
+            <Upload className="h-4 w-4" />
+            Importar XLSX
+          </Button>
+          <Button className="gap-2" onClick={() => router.push("/admin/planilhas/nova")}>
+            <Plus className="h-4 w-4" />
+            Nova planilha
+          </Button>
+        </div>
       </div>
 
       <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar planilha..." />
