@@ -20,6 +20,7 @@ import { ArrowLeft, FileSpreadsheet, Eye, Save } from "lucide-react"
 import { createGlobalTemplate, generateId } from "@/lib/store"
 import { parseTemplateXlsx, type ParsedXlsxTemplate } from "@/lib/xlsx-template-import"
 import type { FormTemplate } from "@/lib/types"
+import { toast } from "@/hooks/use-toast"
 
 const cellGuide = [
   ["B2", "Nome da planilha", "Obrigatorio"],
@@ -27,7 +28,6 @@ const cellGuide = [
   ["B4", "Tipo", "Opcional (padrao: custom)"],
   ["B5", "Versao", "Opcional (padrao: 1.0)"],
   ["B6", "Descricao", "Opcional"],
-  ["B7", "Suporta multiplos registros", "Use Sim/Nao"],
 ] as const
 
 const headerGuide = [
@@ -50,14 +50,14 @@ export default function ImportarPlanilhaPage() {
   const [parsed, setParsed] = useState<ParsedXlsxTemplate | null>(null)
 
   useEffect(() => {
-    if (!currentUser || currentUser.role !== "SUPER_ADMIN") {
+    if (!currentUser || !["SUPER_ADMIN", "NUTRI_ADMIN"].includes(currentUser.role)) {
       router.replace("/dashboard")
     }
   }, [currentUser, router])
 
   const previewFields = useMemo(() => parsed?.template.sections[0]?.fields ?? [], [parsed])
 
-  if (!currentUser || currentUser.role !== "SUPER_ADMIN") return null
+  if (!currentUser || !["SUPER_ADMIN", "NUTRI_ADMIN"].includes(currentUser.role)) return null
 
   async function handleFileUpload(file: File) {
     setError(null)
@@ -85,6 +85,7 @@ export default function ImportarPlanilhaPage() {
 
     createGlobalTemplate(tpl)
     refreshTemplates()
+    toast({ title: "Importacao concluida", description: "Planilha importada e salva com sucesso." })
     router.push(`/admin/planilhas/${tpl.id}`)
   }
 
@@ -94,7 +95,7 @@ export default function ImportarPlanilhaPage() {
         <div>
           <h1 className="text-xl font-bold">Importar planilha XLSX</h1>
           <p className="text-sm text-muted-foreground">
-            Envie um arquivo .xlsx com layout padronizado para criar um template sem retrabalho.
+            Envie um arquivo .xlsx com layout padronizado para criar um template sem retrabalho. Nenhum campo pode ter nome igual.
           </p>
         </div>
         <Button variant="secondary" className="gap-2" onClick={() => router.push("/admin/planilhas")}>
@@ -201,7 +202,6 @@ export default function ImportarPlanilhaPage() {
               <p><span className="font-medium">Nome curto:</span> {parsed.template.shortName}</p>
               <p><span className="font-medium">Tipo:</span> {parsed.template.type}</p>
               <p><span className="font-medium">Versao:</span> {parsed.template.version}</p>
-              <p><span className="font-medium">Multiplos registros:</span> {parsed.template.supportsMultipleRows ? "Sim" : "Nao"}</p>
             </div>
 
             {parsed.warnings.length > 0 && (

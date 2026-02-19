@@ -34,6 +34,7 @@ interface AppContextType {
   vessels: Vessel[]
   selectedVessel: Vessel | null
   selectVessel: (vessel: Vessel | null) => void
+  refreshVessels: () => void
 
   // Companies
   companies: Company[]
@@ -46,7 +47,7 @@ interface AppContextType {
   refreshTemplates: () => void
 
   // MVP demo helper
-  setDemoRole: (role: "SUPER_ADMIN" | "COMPANY_ADMIN" | "USER") => void
+  setDemoRole: (role: "SUPER_ADMIN" | "COMPANY_ADMIN" | "NUTRI_ADMIN" | "USER") => void
   setDemoCompany: (companyId: string) => void
 
   // Entries
@@ -203,6 +204,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSelectedVessel(vessel)
   }, [])
 
+  const refreshVessels = useCallback(() => {
+    setVessels(store.getVessels())
+    const selected = store.getSelectedVessel()
+    setSelectedVessel(selected)
+  }, [])
+
   // Entry functions
   const refreshEntries = useCallback(() => {
     setEntries(store.getEntries())
@@ -223,7 +230,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [currentUser])
 
   const setDemoRole = useCallback(
-    (role: "SUPER_ADMIN" | "COMPANY_ADMIN" | "USER") => {
+    (role: "SUPER_ADMIN" | "COMPANY_ADMIN" | "NUTRI_ADMIN" | "USER") => {
       if (!currentUser) return
       const updated: User = { ...currentUser, role }
       store.updateUser(updated)
@@ -296,6 +303,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         vessels,
         selectedVessel,
         selectVessel,
+        refreshVessels,
         companies,
         companyTemplateConfigs,
         refreshCompanies,

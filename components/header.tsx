@@ -112,6 +112,10 @@ export function Header() {
               <Building2 className="mr-2 h-4 w-4" />
               Ver como Admin da Empresa
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setDemoRole("NUTRI_ADMIN")}>
+              <Shield className="mr-2 h-4 w-4" />
+              Ver como Nutri Admin
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setDemoRole("SUPER_ADMIN")}>
               <Shield className="mr-2 h-4 w-4" />
               Ver como Admin Global

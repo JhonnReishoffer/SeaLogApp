@@ -29,12 +29,13 @@ import { Plus, Trash2, Save, Send, Ship } from "lucide-react"
 import { generateId } from "@/lib/store"
 import type { FormEntry, FormRowData } from "@/lib/types"
 import { validateFieldValue } from "@/lib/form-validation"
+import { toast } from "@/hooks/use-toast"
 
 // Generate month options
 function getMonthOptions() {
   const options: { label: string; value: string }[] = []
   const now = new Date()
-  for (let i = -3; i <= 3; i++) {
+  for (let i = -24; i <= 3; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() + i, 1)
     const year = d.getFullYear()
     const month = String(d.getMonth() + 1).padStart(2, "0")
@@ -69,6 +70,11 @@ function createEmptyRow(): FormRowData {
   }
 }
 
+
+function createInitialRows(count = 5): FormRowData[] {
+  return Array.from({ length: count }, () => createEmptyRow())
+}
+
 export default function FormFillingPage() {
   const params = useParams()
   const searchParams = useSearchParams()
@@ -96,7 +102,7 @@ export default function FormFillingPage() {
   const [period, setPeriod] = useState(
     existingEntry?.period || currentMonth
   )
-  const [rows, setRows] = useState<FormRowData[]>(existingEntry?.rows || [createEmptyRow()])
+  const [rows, setRows] = useState<FormRowData[]>(existingEntry?.rows || createInitialRows())
   const [status, setStatus] = useState(existingEntry?.status || "rascunho" as const)
   const [saved, setSaved] = useState(false)
   const [entryRef, setEntryRef] = useState(existingEntry?.id || "")
@@ -115,6 +121,10 @@ export default function FormFillingPage() {
         setRows(found.rows)
         setStatus(found.status)
         setEntryRef(found.id)
+      } else {
+        setRows(createInitialRows())
+        setStatus("rascunho")
+        setEntryRef("")
       }
     }
   }, [period, selectedVessel, template, entries, entryId])
@@ -215,6 +225,11 @@ export default function FormFillingPage() {
 
     setStatus(newStatus)
     setSaved(true)
+
+    if (newStatus !== "rascunho") {
+      toast({ title: "Formulario salvo", description: "Registro enviado e salvo com sucesso." })
+      router.back()
+    }
   }
 
   if (!template) {
@@ -323,11 +338,10 @@ export default function FormFillingPage() {
         </Card>
       )}
 
-      <div className="flex flex-col gap-4">
+      <div className="overflow-hidden rounded-lg border">
         {rows.map((row, index) => (
-          <Card key={row.id}>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
+          <div key={row.id} className="border-b last:border-b-0">
+            <div className="flex items-center justify-between bg-muted/30 px-4 py-3">
                 <CardTitle className="text-sm font-medium">
                   Registro {index + 1}
                 </CardTitle>
@@ -342,9 +356,8 @@ export default function FormFillingPage() {
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 )}
-              </div>
-            </CardHeader>
-            <CardContent>
+            </div>
+            <div className="p-4">
               {template.sections.map((section) => (
                 <div key={section.id} className="flex flex-col gap-3">
                   {section.title && template.sections.length > 1 && (
@@ -362,8 +375,8 @@ export default function FormFillingPage() {
                   />
                 </div>
               ))}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ))}
       </div>
 

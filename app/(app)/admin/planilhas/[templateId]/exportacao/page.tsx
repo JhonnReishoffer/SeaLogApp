@@ -35,7 +35,7 @@ export default function ExportacaoPlanilhaPage() {
   const [order, setOrder] = useState<string[]>([])
 
   useEffect(() => {
-    if (!currentUser || currentUser.role !== "SUPER_ADMIN") {
+    if (!currentUser || !["SUPER_ADMIN", "NUTRI_ADMIN"].includes(currentUser.role)) {
       router.replace("/dashboard")
       return
     }
@@ -54,7 +54,7 @@ export default function ExportacaoPlanilhaPage() {
     setOrder(uniq(ord.filter((id) => allIds.includes(id))))
   }, [template, fields])
 
-  if (!currentUser || currentUser.role !== "SUPER_ADMIN") return null
+  if (!currentUser || !["SUPER_ADMIN", "NUTRI_ADMIN"].includes(currentUser.role)) return null
   if (!template) {
     return (
       <div className="flex flex-col gap-4 p-6">
@@ -98,8 +98,9 @@ export default function ExportacaoPlanilhaPage() {
     const missing = allIds.filter((id) => !baseOrder.includes(id))
     const safeOrder = [...baseOrder, ...missing]
 
+    const baseTemplate = template as FormTemplate
     const updated: FormTemplate = {
-      ...template,
+      ...baseTemplate,
       exportConfig: {
         includedFieldIds: safeIncluded,
         fieldOrder: safeOrder,

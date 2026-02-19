@@ -35,7 +35,7 @@ export default function ReviewDetailPage() {
   const [correctionNote, setCorrectionNote] = useState("")
 
   const isAdmin =
-    currentUser?.role === "SUPER_ADMIN" || currentUser?.role === "COMPANY_ADMIN"
+    currentUser?.role === "SUPER_ADMIN" || currentUser?.role === "NUTRI_ADMIN"
 
   useEffect(() => {
     if (currentUser && !isAdmin) {

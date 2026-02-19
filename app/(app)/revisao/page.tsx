@@ -13,7 +13,7 @@ export default function RevisaoPage() {
   const { currentUser, selectedVessel, entries, templates } = useApp()
 
   const isAdmin =
-    currentUser?.role === "SUPER_ADMIN" || currentUser?.role === "COMPANY_ADMIN"
+    currentUser?.role === "SUPER_ADMIN" || currentUser?.role === "NUTRI_ADMIN"
 
   useEffect(() => {
     if (currentUser && !isAdmin) {

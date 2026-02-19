@@ -231,6 +231,28 @@ export function addVessel(vessel: Vessel) {
   setItems(KEYS.VESSELS, vessels)
 }
 
+
+export function updateVessel(vessel: Vessel) {
+  const vessels = getVessels()
+  const idx = vessels.findIndex((v) => v.id === vessel.id)
+  if (idx !== -1) {
+    vessels[idx] = vessel
+    setItems(KEYS.VESSELS, vessels)
+  }
+}
+
+export function deleteVessel(vesselId: string) {
+  setItems(KEYS.VESSELS, getVessels().filter((v) => v.id !== vesselId))
+  setItems(KEYS.ENTRIES, getEntries().filter((e) => e.vesselId !== vesselId))
+  const selected = getSelectedVessel()
+  if (selected?.id === vesselId) {
+    setSelectedVessel(null)
+  }
+}
+
+export function countEntriesByVessel(vesselId: string): number {
+  return getEntries().filter((e) => e.vesselId === vesselId).length
+}
 export function setSelectedVessel(vessel: Vessel | null) {
   if (!isClient()) return
   if (vessel) localStorage.setItem(KEYS.SELECTED_VESSEL, JSON.stringify(vessel))

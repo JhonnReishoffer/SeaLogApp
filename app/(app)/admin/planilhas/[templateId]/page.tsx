@@ -40,6 +40,7 @@ import { ArrowLeft, Plus, Save, Trash2, FileSpreadsheet, GripVertical } from "lu
 import type { FormField, FormSection, FormTemplate } from "@/lib/types"
 import { updateGlobalTemplate, deleteGlobalTemplate, generateId } from "@/lib/store"
 import { MultiSelect } from "@/components/multi-select"
+import { toast } from "@/hooks/use-toast"
 
 const FIELD_TYPES = [
   { value: "text", label: "Texto" },
@@ -75,7 +76,6 @@ export default function EditarPlanilhaPage() {
   const [type, setType] = useState("custom")
   const [version, setVersion] = useState("1.0")
   const [description, setDescription] = useState("")
-  const [supportsMultipleRows, setSupportsMultipleRows] = useState(true)
   const [companyIds, setCompanyIds] = useState<string[]>([])
   const [sections, setSections] = useState<FormSection[]>([{ id: "sec-1", title: "Campos", fields: [] }])
 
@@ -85,7 +85,7 @@ export default function EditarPlanilhaPage() {
   )
 
   useEffect(() => {
-    if (!currentUser || currentUser.role !== "SUPER_ADMIN") {
+    if (!currentUser || !["SUPER_ADMIN", "NUTRI_ADMIN"].includes(currentUser.role)) {
       router.replace("/dashboard")
       return
     }
@@ -98,7 +98,6 @@ export default function EditarPlanilhaPage() {
     setType(template.type)
     setVersion(template.version)
     setDescription(template.description)
-    setSupportsMultipleRows(template.supportsMultipleRows)
     setCompanyIds(template.companyIds ?? [])
     setSections(template.sections?.length ? template.sections : [{ id: "sec-1", title: "Campos", fields: [] }])
   }, [template])
@@ -117,7 +116,7 @@ export default function EditarPlanilhaPage() {
   const [editingFieldId, setEditingFieldId] = useState<string | null>(null)
   const [draggingFieldId, setDraggingFieldId] = useState<string | null>(null)
 
-  if (!currentUser || currentUser.role !== "SUPER_ADMIN") return null
+  if (!currentUser || !["SUPER_ADMIN", "NUTRI_ADMIN"].includes(currentUser.role)) return null
   if (!template) {
     return (
       <div className="flex flex-col gap-4 p-6">
@@ -229,12 +228,14 @@ export default function EditarPlanilhaPage() {
       type: type.trim() || "custom",
       version: version.trim() || "1.0",
       description: description.trim(),
-      supportsMultipleRows,
+      supportsMultipleRows: true,
       sections,
       companyIds: companyIds.length > 0 ? companyIds : [],
     }
     updateGlobalTemplate(updated)
     refreshTemplates()
+    toast({ title: "Planilha salva", description: "As alteracoes foram salvas com sucesso." })
+    router.back()
   }
 
   function handleDelete() {
@@ -325,14 +326,6 @@ export default function EditarPlanilhaPage() {
           <div className="grid gap-2">
             <Label>Descricao</Label>
             <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
-          </div>
-
-          <div className="flex items-center justify-between rounded-lg border p-3">
-            <div>
-              <p className="text-sm font-medium">Suporta multiplos registros</p>
-              <p className="text-xs text-muted-foreground">Varias linhas (data/hora/turno) por periodo</p>
-            </div>
-            <Switch checked={supportsMultipleRows} onCheckedChange={setSupportsMultipleRows} />
           </div>
 
           <div className="grid gap-2">
@@ -467,14 +460,14 @@ export default function EditarPlanilhaPage() {
               {sections[0].fields.map((f) => (
                 <div
                   key={f.id}
-                  className="flex items-center justify-between rounded-lg border px-3 py-2"
+                  className="flex cursor-pointer items-center justify-between rounded-lg border px-3 py-2 transition-colors hover:bg-muted/40"
                   draggable
                   onDragStart={() => setDraggingFieldId(f.id)}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={() => moveFieldByDrag(f.id)}
                   onDragEnd={() => setDraggingFieldId(null)}
                 >
-                  <button type="button" className="flex min-w-0 flex-1 items-center gap-2 text-left" onClick={() => startEditField(f.id)}>
+                  <button type="button" className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left" onClick={() => startEditField(f.id)}>
                     <GripVertical className="h-4 w-4 text-muted-foreground" />
                     <p className="truncate text-sm font-medium">{f.label}</p>
                     <p className="text-xs text-muted-foreground">{f.id} • {f.type}{f.required ? " • obrigatorio" : ""}</p>

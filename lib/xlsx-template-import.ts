@@ -54,7 +54,6 @@ export function parseTemplateXlsx(buffer: ArrayBuffer): ParsedXlsxTemplate {
   const type = cell(sheet, "B4") || "custom"
   const version = cell(sheet, "B5") || "1.0"
   const description = cell(sheet, "B6")
-  const supportsMultipleRows = parseBoolean(cell(sheet, "B7"))
 
   if (!name) {
     throw new Error("A celula B2 (Nome da planilha) e obrigatoria.")
@@ -126,6 +125,12 @@ export function parseTemplateXlsx(buffer: ArrayBuffer): ParsedXlsxTemplate {
     throw new Error("Nenhum campo valido encontrado. Preencha a tabela a partir da linha 11.")
   }
 
+  const normalizedLabels = fields.map((f) => f.label.trim().toLowerCase())
+  const uniqueLabels = new Set(normalizedLabels)
+  if (uniqueLabels.size !== normalizedLabels.length) {
+    throw new Error("Nenhum campo pode ter nome igual. Ajuste os labels duplicados para concluir a importacao.")
+  }
+
   return {
     template: {
       name,
@@ -140,7 +145,7 @@ export function parseTemplateXlsx(buffer: ArrayBuffer): ParsedXlsxTemplate {
           fields,
         },
       ],
-      supportsMultipleRows,
+      supportsMultipleRows: true,
       companyIds: [],
     },
     warnings,
