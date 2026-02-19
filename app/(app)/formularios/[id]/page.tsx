@@ -458,12 +458,6 @@ export default function FormFillingPage() {
               />
             </div>
           ))}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="gap-3">
-          <CardTitle className="text-base">Tabela de registros</CardTitle>
           {!isReadOnly && (
             <div className="flex flex-col gap-2 sm:flex-row">
               <Button className="select-none gap-2" onClick={upsertCurrentRow}>
@@ -475,6 +469,12 @@ export default function FormFillingPage() {
               </Button>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="gap-3">
+          <CardTitle className="text-base">Tabela de registros</CardTitle>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <input
               className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
