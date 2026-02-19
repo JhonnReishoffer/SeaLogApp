@@ -18,7 +18,7 @@ export function Header() {
   const router = useRouter()
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
-  const { currentUser, logout, companies, setDemoRole } = useApp()
+  const { currentUser, logout, companies, setDemoRole, setDemoCompany } = useApp()
 
   const companyName =
     currentUser?.companyId ? companies.find((c) => c.id === currentUser.companyId)?.name : null
@@ -116,6 +116,17 @@ export function Header() {
               <Shield className="mr-2 h-4 w-4" />
               Ver como Admin Global
             </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+            <div className="px-2 py-1.5">
+              <p className="text-xs font-medium text-muted-foreground">Trocar empresa</p>
+            </div>
+            {companies.map((company) => (
+              <DropdownMenuItem key={company.id} onClick={() => setDemoCompany(company.id)}>
+                <Building2 className="mr-2 h-4 w-4" />
+                {company.name}
+              </DropdownMenuItem>
+            ))}
 
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => router.push("/perfil")}>

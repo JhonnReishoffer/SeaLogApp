@@ -36,7 +36,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { ArrowLeft, Plus, Save, Trash2, ChevronUp, ChevronDown, FileSpreadsheet } from "lucide-react"
+import { ArrowLeft, Plus, Save, Trash2, FileSpreadsheet, GripVertical } from "lucide-react"
 import type { FormField, FormSection, FormTemplate } from "@/lib/types"
 import { updateGlobalTemplate, deleteGlobalTemplate, generateId } from "@/lib/store"
 import { MultiSelect } from "@/components/multi-select"
@@ -110,6 +110,12 @@ export default function EditarPlanilhaPage() {
   const [fieldRequired, setFieldRequired] = useState(false)
   const [fieldOptions, setFieldOptions] = useState("")
   const [fieldUnit, setFieldUnit] = useState("")
+  const [fieldMin, setFieldMin] = useState("")
+  const [fieldMax, setFieldMax] = useState("")
+  const [fieldMaxTimeFromFieldId, setFieldMaxTimeFromFieldId] = useState("")
+  const [fieldMaxTimeOffsetMinutes, setFieldMaxTimeOffsetMinutes] = useState("0")
+  const [editingFieldId, setEditingFieldId] = useState<string | null>(null)
+  const [draggingFieldId, setDraggingFieldId] = useState<string | null>(null)
 
   if (!currentUser || currentUser.role !== "SUPER_ADMIN") return null
   if (!template) {
@@ -124,7 +130,7 @@ export default function EditarPlanilhaPage() {
   function addField() {
     const label = fieldLabel.trim()
     if (!label) return
-    const id = slugify(label) || `campo_${generateId()}`
+    const id = editingFieldId || slugify(label) || `campo_${generateId()}`
     const f: FormField = {
       id,
       label,
@@ -139,12 +145,21 @@ export default function EditarPlanilhaPage() {
           : undefined,
       unit: fieldType === "temperature" ? "°C" : fieldUnit.trim() || undefined,
       width: "half",
+      min: fieldType === "number" || fieldType === "temperature" ? Number(fieldMin || "") || undefined : undefined,
+      max: fieldType === "number" || fieldType === "temperature" ? Number(fieldMax || "") || undefined : undefined,
+      maxTimeFromFieldId: fieldType === "time" ? fieldMaxTimeFromFieldId || undefined : undefined,
+      maxTimeOffsetMinutes: fieldType === "time" ? Number(fieldMaxTimeOffsetMinutes || "0") : undefined,
     }
 
     setSections((prev) => {
       const next = [...prev]
       const first = next[0] ?? { id: "sec-1", title: "Campos", fields: [] }
-      next[0] = { ...first, fields: [...first.fields, f] }
+      next[0] = {
+        ...first,
+        fields: editingFieldId
+          ? first.fields.map((item) => (item.id === editingFieldId ? f : item))
+          : [...first.fields, f],
+      }
       return next
     })
 
@@ -153,7 +168,28 @@ export default function EditarPlanilhaPage() {
     setFieldRequired(false)
     setFieldOptions("")
     setFieldUnit("")
+    setFieldMin("")
+    setFieldMax("")
+    setFieldMaxTimeFromFieldId("")
+    setFieldMaxTimeOffsetMinutes("0")
+    setEditingFieldId(null)
     setOpenField(false)
+  }
+
+  function startEditField(fieldId: string) {
+    const field = sections[0]?.fields.find((f) => f.id === fieldId)
+    if (!field) return
+    setEditingFieldId(field.id)
+    setFieldLabel(field.label)
+    setFieldType(field.type)
+    setFieldRequired(field.required)
+    setFieldOptions(field.options?.join(", ") || "")
+    setFieldUnit(field.unit || "")
+    setFieldMin(field.min?.toString() || "")
+    setFieldMax(field.max?.toString() || "")
+    setFieldMaxTimeFromFieldId(field.maxTimeFromFieldId || "")
+    setFieldMaxTimeOffsetMinutes(String(field.maxTimeOffsetMinutes ?? 0))
+    setOpenField(true)
   }
 
   function removeField(fieldId: string) {
@@ -165,23 +201,24 @@ export default function EditarPlanilhaPage() {
     })
   }
 
-  function moveField(fieldId: string, direction: "up" | "down") {
+  function moveFieldByDrag(targetFieldId: string) {
+    if (!draggingFieldId || draggingFieldId === targetFieldId) return
     setSections((prev) => {
       const next = [...prev]
       const first = next[0] ?? { id: "sec-1", title: "Campos", fields: [] }
-      const idx = first.fields.findIndex((f) => f.id === fieldId)
-      if (idx === -1) return prev
-      const target = direction === "up" ? idx - 1 : idx + 1
-      if (target < 0 || target >= first.fields.length) return prev
       const fields = [...first.fields]
-      const [item] = fields.splice(idx, 1)
-      fields.splice(target, 0, item)
+      const from = fields.findIndex((f) => f.id === draggingFieldId)
+      const to = fields.findIndex((f) => f.id === targetFieldId)
+      if (from < 0 || to < 0) return prev
+      const [item] = fields.splice(from, 1)
+      fields.splice(to, 0, item)
       next[0] = { ...first, fields }
       return next
     })
   }
 
   function handleSave() {
+    if (!template) return
     const n = name.trim()
     if (!n) return
 
@@ -201,6 +238,7 @@ export default function EditarPlanilhaPage() {
   }
 
   function handleDelete() {
+    if (!template) return
     deleteGlobalTemplate(template.id)
     refreshTemplates()
     router.push("/admin/planilhas")
@@ -313,14 +351,29 @@ export default function EditarPlanilhaPage() {
         <CardContent className="flex flex-col gap-3">
           <Dialog open={openField} onOpenChange={setOpenField}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2 self-start">
+              <Button
+                variant="outline"
+                className="gap-2 self-start"
+                onClick={() => {
+                  setEditingFieldId(null)
+                  setFieldLabel("")
+                  setFieldType("text")
+                  setFieldRequired(false)
+                  setFieldOptions("")
+                  setFieldUnit("")
+                  setFieldMin("")
+                  setFieldMax("")
+                  setFieldMaxTimeFromFieldId("")
+                  setFieldMaxTimeOffsetMinutes("0")
+                }}
+              >
                 <Plus className="h-4 w-4" />
                 Adicionar campo
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Novo campo</DialogTitle>
+                <DialogTitle>{editingFieldId ? "Editar campo" : "Novo campo"}</DialogTitle>
                 <DialogDescription>Crie uma coluna fixa para a planilha.</DialogDescription>
               </DialogHeader>
 
@@ -360,6 +413,40 @@ export default function EditarPlanilhaPage() {
                   </div>
                 )}
 
+                {(fieldType === "number" || fieldType === "temperature") && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="grid gap-2">
+                      <Label>Minimo</Label>
+                      <Input type="number" value={fieldMin} onChange={(e) => setFieldMin(e.target.value)} placeholder="Ex: -5" />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Maximo</Label>
+                      <Input type="number" value={fieldMax} onChange={(e) => setFieldMax(e.target.value)} placeholder="Ex: 10" />
+                    </div>
+                  </div>
+                )}
+
+                {fieldType === "time" && (
+                  <div className="grid gap-2 rounded-lg border p-3">
+                    <Label>Regra de dependencia de horario</Label>
+                    <Select value={fieldMaxTimeFromFieldId || "none"} onValueChange={(v) => setFieldMaxTimeFromFieldId(v === "none" ? "" : v)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sem dependencia" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Sem dependencia</SelectItem>
+                        {sections[0]?.fields.filter((f) => f.id !== editingFieldId && f.type === "time").map((f) => (
+                          <SelectItem key={f.id} value={f.id}>{f.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="grid gap-2">
+                      <Label>Limite em minutos apos o campo de referencia</Label>
+                      <Input type="number" value={fieldMaxTimeOffsetMinutes} onChange={(e) => setFieldMaxTimeOffsetMinutes(e.target.value)} />
+                    </div>
+                  </div>
+                )}
+
                 {fieldType !== "temperature" && fieldType !== "select" && (
                   <div className="grid gap-2">
                     <Label>Unidade (opcional)</Label>
@@ -370,7 +457,7 @@ export default function EditarPlanilhaPage() {
 
               <DialogFooter>
                 <Button variant="secondary" onClick={() => setOpenField(false)}>Cancelar</Button>
-                <Button onClick={addField}>Adicionar</Button>
+                <Button onClick={addField}>{editingFieldId ? "Salvar alteracoes" : "Adicionar"}</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -378,30 +465,21 @@ export default function EditarPlanilhaPage() {
           {sections[0]?.fields?.length ? (
             <div className="grid gap-2">
               {sections[0].fields.map((f) => (
-                <div key={f.id} className="flex items-center justify-between rounded-lg border px-3 py-2">
-                  <div className="min-w-0">
+                <div
+                  key={f.id}
+                  className="flex items-center justify-between rounded-lg border px-3 py-2"
+                  draggable
+                  onDragStart={() => setDraggingFieldId(f.id)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => moveFieldByDrag(f.id)}
+                  onDragEnd={() => setDraggingFieldId(null)}
+                >
+                  <button type="button" className="flex min-w-0 flex-1 items-center gap-2 text-left" onClick={() => startEditField(f.id)}>
+                    <GripVertical className="h-4 w-4 text-muted-foreground" />
                     <p className="truncate text-sm font-medium">{f.label}</p>
                     <p className="text-xs text-muted-foreground">{f.id} • {f.type}{f.required ? " • obrigatorio" : ""}</p>
-                  </div>
+                  </button>
                   <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => moveField(f.id, "up")}
-                      aria-label="Mover para cima"
-                    >
-                      <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => moveField(f.id, "down")}
-                      aria-label="Mover para baixo"
-                    >
-                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                    </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeField(f.id)} aria-label="Remover">
                       <Trash2 className="h-4 w-4 text-muted-foreground" />
                     </Button>

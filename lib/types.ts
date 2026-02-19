@@ -96,6 +96,10 @@ export interface FormField {
   placeholder?: string
   min?: number
   max?: number
+  /** For time fields: reference another time field from same row. */
+  maxTimeFromFieldId?: string
+  /** Allowed minutes after the reference field value (default: 0). */
+  maxTimeOffsetMinutes?: number
   options?: string[]
   unit?: string
   width?: "full" | "half" | "third"

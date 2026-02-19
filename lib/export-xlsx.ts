@@ -90,7 +90,7 @@ export async function exportToXlsx(
 
   // Generate filename
   const sanitizedVessel = vesselName.replace(/[^a-zA-Z0-9]/g, "_")
-  const filename = `SeaLog_${sanitizedVessel}_${period}.xlsx`
+  const filename = `SeaLogApp_${sanitizedVessel}_${period}.xlsx`
 
   // Trigger download
   XLSX.writeFile(wb, filename)

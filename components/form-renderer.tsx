@@ -11,11 +11,13 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { isEmptyValue, validateFieldValue } from "@/lib/form-validation"
 import type { FormField, FormRowData } from "@/lib/types"
 
 interface FormFieldRendererProps {
   field: FormField
   value: string | number | boolean
+  rowValues: Record<string, string | number | boolean>
   onChange: (fieldId: string, value: string | number | boolean) => void
   disabled?: boolean
 }
@@ -23,6 +25,7 @@ interface FormFieldRendererProps {
 export function FormFieldRenderer({
   field,
   value,
+  rowValues,
   onChange,
   disabled = false,
 }: FormFieldRendererProps) {
@@ -34,6 +37,8 @@ export function FormFieldRenderer({
         : "col-span-full sm:col-span-1"
 
   const stringVal = value !== undefined && value !== null ? String(value) : ""
+  const fieldError = validateFieldValue(field, rowValues)
+  const showRequiredAsterisk = field.required && isEmptyValue(rowValues[field.id])
 
   function renderField() {
     switch (field.type) {
@@ -153,12 +158,13 @@ export function FormFieldRenderer({
     <div className={cn("flex flex-col gap-1.5", widthClass)}>
       <Label className="text-sm font-medium">
         {field.label}
-        {field.required && <span className="ml-0.5 text-destructive-foreground">*</span>}
+        {showRequiredAsterisk && <span className="ml-0.5 text-destructive-foreground">*</span>}
         {field.unit && (
           <span className="ml-1 text-xs text-muted-foreground">({field.unit})</span>
         )}
       </Label>
       {renderField()}
+      {fieldError && <p className="text-xs text-destructive-foreground">{fieldError}</p>}
     </div>
   )
 }
@@ -187,6 +193,7 @@ export function FormRowRenderer({
           key={field.id}
           field={field}
           value={row.values[field.id] ?? ""}
+          rowValues={row.values}
           onChange={onChange}
           disabled={disabled}
         />
