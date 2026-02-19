@@ -146,6 +146,12 @@ export default function FormFillingPage() {
     [template]
   )
 
+
+  const rowPreviewFields = useMemo(
+    () => allFields.slice(0, 2),
+    [allFields]
+  )
+
   const isReadOnly =
     status === "aprovada" || status === "sincronizada" || status === "em_revisao"
 
@@ -504,6 +510,9 @@ export default function FormFillingPage() {
                   <th className="px-3 py-2 font-medium">Data</th>
                   <th className="px-3 py-2 font-medium">Hora</th>
                   <th className="px-3 py-2 font-medium">Turno</th>
+                  {rowPreviewFields.map((field) => (
+                    <th key={field.id} className="px-3 py-2 font-medium">{field.label}</th>
+                  ))}
                   <th className="px-3 py-2 font-medium">Campos preenchidos</th>
                 </tr>
               </thead>
@@ -518,12 +527,28 @@ export default function FormFillingPage() {
                     <td className="px-3 py-2">{formatDateBr(row.date)}</td>
                     <td className="px-3 py-2">{row.time || "-"}</td>
                     <td className="px-3 py-2">{row.shift || "-"}</td>
+                    {rowPreviewFields.map((field) => {
+                      const rawValue = row.values[field.id]
+                      let displayValue = "-"
+
+                      if (typeof rawValue === "boolean") {
+                        displayValue = rawValue ? "Sim" : "Não"
+                      } else if (rawValue !== "" && rawValue !== null && rawValue !== undefined) {
+                        displayValue = String(rawValue)
+                      }
+
+                      return (
+                        <td key={`${row.id}-${field.id}`} className="max-w-[220px] px-3 py-2 truncate" title={displayValue}>
+                          {displayValue}
+                        </td>
+                      )
+                    })}
                     <td className="px-3 py-2">{Object.values(row.values).filter((value) => value !== "" && value !== null && value !== undefined).length}</td>
                   </tr>
                 ))}
                 {filteredRows.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-3 py-5 text-center text-muted-foreground">
+                    <td colSpan={5 + rowPreviewFields.length} className="px-3 py-5 text-center text-muted-foreground">
                       Nenhum registro encontrado.
                     </td>
                   </tr>

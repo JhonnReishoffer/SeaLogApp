@@ -136,6 +136,23 @@ export default function AdminEmpresaDetailPage() {
         <Button variant="secondary" onClick={() => router.push("/admin/empresas")}>Voltar</Button>
       </div>
 
+      <Dialog open={Boolean(editingVessel)} onOpenChange={(open) => !open && setEditingVessel(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar embarcação</DialogTitle>
+            <DialogDescription>Atualize o nome da embarcação.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label>Nome</Label>
+            <Input value={editingVesselName} onChange={(e) => setEditingVesselName(e.target.value)} />
+          </div>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setEditingVessel(null)}>Cancelar</Button>
+            <Button onClick={handleSaveVessel}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Tabs defaultValue="empresa">
         <TabsList>
           <TabsTrigger value="empresa" className="gap-2">
@@ -159,23 +176,6 @@ export default function AdminEmpresaDetailPage() {
               <CardDescription>Edite o nome ou exclua a empresa (remove embarcacoes/relatorios vinculados)</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
-              <Dialog open={Boolean(editingVessel)} onOpenChange={(open) => !open && setEditingVessel(null)}>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Editar embarcacao</DialogTitle>
-                    <DialogDescription>Atualize o nome da embarcacao.</DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-2 py-2">
-                    <Label>Nome</Label>
-                    <Input value={editingVesselName} onChange={(e) => setEditingVesselName(e.target.value)} />
-                  </div>
-                  <DialogFooter>
-                    <Button variant="secondary" onClick={() => setEditingVessel(null)}>Cancelar</Button>
-                    <Button onClick={handleSaveVessel}>Salvar</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-
               <div className="grid gap-2">
                 <Label>Nome</Label>
                 <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} />

@@ -37,6 +37,7 @@ import {
   Shield,
   Building2,
   ClipboardList,
+  UsersRound,
 } from "lucide-react"
 import { clearAllData } from "@/lib/store"
 
@@ -54,9 +55,9 @@ export default function ConfiguracoesPage() {
   return (
     <div className="flex flex-col gap-6 p-4">
       <div>
-        <h1 className="text-xl font-bold">Configuracoes</h1>
+        <h1 className="text-xl font-bold">Configurações</h1>
         <p className="text-sm text-muted-foreground">
-          Ajuste as preferencias do aplicativo
+          Ajuste as preferências do aplicativo
         </p>
       </div>
 
@@ -65,10 +66,10 @@ export default function ConfiguracoesPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Sun className="h-4 w-4" />
-            Aparencia
+            Aparência
           </CardTitle>
           <CardDescription>
-            Personalize a aparencia do aplicativo
+            Personalize a aparência do aplicativo
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
@@ -126,19 +127,19 @@ export default function ConfiguracoesPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Bell className="h-4 w-4" />
-            Notificacoes
+            Notificações
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
-            <Label className="text-sm">Ativar notificacoes</Label>
+            <Label className="text-sm">Ativar notificações</Label>
             <Switch
               checked={notifications}
               onCheckedChange={setNotifications}
             />
           </div>
           <p className="text-xs text-muted-foreground">
-            Receba lembretes sobre formularios pendentes e revisoes.
+            Receba lembretes sobre formulários pendentes e revisões.
           </p>
         </CardContent>
       </Card>
@@ -173,9 +174,9 @@ export default function ConfiguracoesPage() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Limpar todos os dados?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Isto removera todos os formularios, modelos, embarcacoes e
-                  dados de usuarios armazenados neste dispositivo. Esta acao
-                  nao pode ser desfeita.
+                  Isto removerá todos os formulários, modelos, embarcações e
+                  dados de usuários armazenados neste dispositivo. Esta ação
+                  não pode ser desfeita.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -195,12 +196,12 @@ export default function ConfiguracoesPage() {
       </Card>
 
       {/* Security */}
-      {(currentUser?.role === "SUPER_ADMIN" || currentUser?.role === "COMPANY_ADMIN" || currentUser?.role === "NUTRI_ADMIN") && (
+      {(currentUser?.role === "SUPER_ADMIN" || currentUser?.role === "COMPANY_ADMIN") && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Shield className="h-4 w-4" />
-              Administracao
+              Administração
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -209,7 +210,10 @@ export default function ConfiguracoesPage() {
               className="w-full select-none"
               onClick={() => (window.location.href = "/admin/usuarios")}
             >
-              Gerenciar Usuarios
+              <span className="flex items-center justify-center gap-2">
+                <UsersRound className="h-4 w-4" />
+                Gerenciar usuários
+              </span>
             </Button>
             {currentUser?.role === "SUPER_ADMIN" && (
               <Button
@@ -219,11 +223,11 @@ export default function ConfiguracoesPage() {
               >
                 <span className="flex items-center justify-center gap-2">
                   <Building2 className="h-4 w-4" />
-                  Gerenciar Empresas
+                  Gerenciar empresas
                 </span>
               </Button>
             )}
-            {(currentUser?.role === "SUPER_ADMIN" || currentUser?.role === "NUTRI_ADMIN") && (
+            {currentUser?.role === "SUPER_ADMIN" && (
               <Button
                 variant="outline"
                 className="w-full select-none mt-2"
@@ -231,7 +235,7 @@ export default function ConfiguracoesPage() {
               >
                 <span className="flex items-center justify-center gap-2">
                   <ClipboardList className="h-4 w-4" />
-                  Gerenciar Planilhas
+                  Gerenciar planilhas
                 </span>
               </Button>
             )}
@@ -249,7 +253,7 @@ export default function ConfiguracoesPage() {
         </CardHeader>
         <CardContent className="flex flex-col gap-2 text-sm">
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Versao</span>
+            <span className="text-muted-foreground">Versão</span>
             <span>1.0.0</span>
           </div>
           <div className="flex justify-between">
