@@ -113,6 +113,8 @@ export default function EditarPlanilhaPage() {
   const [fieldMax, setFieldMax] = useState("")
   const [fieldMaxTimeFromFieldId, setFieldMaxTimeFromFieldId] = useState("")
   const [fieldMaxTimeOffsetMinutes, setFieldMaxTimeOffsetMinutes] = useState("0")
+  const [fieldDependsOnSelectFieldId, setFieldDependsOnSelectFieldId] = useState("")
+  const [fieldDependsOnSelectValue, setFieldDependsOnSelectValue] = useState("Sim")
   const [editingFieldId, setEditingFieldId] = useState<string | null>(null)
   const [draggingFieldId, setDraggingFieldId] = useState<string | null>(null)
 
@@ -148,6 +150,8 @@ export default function EditarPlanilhaPage() {
       max: fieldType === "number" || fieldType === "temperature" ? Number(fieldMax || "") || undefined : undefined,
       maxTimeFromFieldId: fieldType === "time" ? fieldMaxTimeFromFieldId || undefined : undefined,
       maxTimeOffsetMinutes: fieldType === "time" ? Number(fieldMaxTimeOffsetMinutes || "0") : undefined,
+      dependsOnSelectFieldId: fieldDependsOnSelectFieldId || undefined,
+      dependsOnSelectValue: fieldDependsOnSelectFieldId ? fieldDependsOnSelectValue : undefined,
     }
 
     setSections((prev) => {
@@ -171,6 +175,8 @@ export default function EditarPlanilhaPage() {
     setFieldMax("")
     setFieldMaxTimeFromFieldId("")
     setFieldMaxTimeOffsetMinutes("0")
+    setFieldDependsOnSelectFieldId("")
+    setFieldDependsOnSelectValue("Sim")
     setEditingFieldId(null)
     setOpenField(false)
   }
@@ -188,6 +194,8 @@ export default function EditarPlanilhaPage() {
     setFieldMax(field.max?.toString() || "")
     setFieldMaxTimeFromFieldId(field.maxTimeFromFieldId || "")
     setFieldMaxTimeOffsetMinutes(String(field.maxTimeOffsetMinutes ?? 0))
+    setFieldDependsOnSelectFieldId(field.dependsOnSelectFieldId || "")
+    setFieldDependsOnSelectValue(field.dependsOnSelectValue || "Sim")
     setOpenField(true)
   }
 
@@ -358,6 +366,8 @@ export default function EditarPlanilhaPage() {
                   setFieldMax("")
                   setFieldMaxTimeFromFieldId("")
                   setFieldMaxTimeOffsetMinutes("0")
+    setFieldDependsOnSelectFieldId("")
+    setFieldDependsOnSelectValue("Sim")
                 }}
               >
                 <Plus className="h-4 w-4" />
@@ -439,6 +449,34 @@ export default function EditarPlanilhaPage() {
                     </div>
                   </div>
                 )}
+
+
+                <div className="grid gap-2 rounded-lg border p-3">
+                  <Label>Dependencia por selecao</Label>
+                  <Select value={fieldDependsOnSelectFieldId || "none"} onValueChange={(v) => setFieldDependsOnSelectFieldId(v === "none" ? "" : v)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sem dependencia" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sem dependencia</SelectItem>
+                      {sections[0]?.fields.filter((f) => f.id !== editingFieldId && f.type === "select").map((f) => (
+                        <SelectItem key={f.id} value={f.id}>{f.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {fieldDependsOnSelectFieldId && (
+                    <Select value={fieldDependsOnSelectValue} onValueChange={setFieldDependsOnSelectValue}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Sim">Sim</SelectItem>
+                        <SelectItem value="Nao">Nao</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                  <p className="text-xs text-muted-foreground">Quando a selecao escolhida for igual ao valor acima, este campo fica bloqueado em cinza claro.</p>
+                </div>
 
                 {fieldType !== "temperature" && fieldType !== "select" && (
                   <div className="grid gap-2">

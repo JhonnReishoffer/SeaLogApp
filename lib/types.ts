@@ -100,6 +100,10 @@ export interface FormField {
   maxTimeFromFieldId?: string
   /** Allowed minutes after the reference field value (default: 0). */
   maxTimeOffsetMinutes?: number
+  /** Disable this field when the referenced select field matches this value. */
+  dependsOnSelectFieldId?: string
+  /** Value on the referenced select field that locks this field (ex: "Sim"/"Nao"). */
+  dependsOnSelectValue?: string
   options?: string[]
   unit?: string
   width?: "full" | "half" | "third"

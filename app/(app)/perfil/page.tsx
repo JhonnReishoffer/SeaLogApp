@@ -19,14 +19,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { User, Building2, Shield, Save, Trash2, Mail } from "lucide-react"
+import { User, Building2, Shield, Save, Trash2, Mail, Upload, ImagePlus } from "lucide-react"
 
 export default function PerfilPage() {
   const router = useRouter()
-  const { currentUser, updateCurrentUser, deleteAccount, logout, companies } = useApp()
+  const { currentUser, updateCurrentUser, deleteAccount, companies } = useApp()
 
   const [name, setName] = useState(currentUser?.name || "")
   const [email, setEmail] = useState(currentUser?.email || "")
+  const [avatarUrl, setAvatarUrl] = useState(currentUser?.avatarUrl || "")
   const [saved, setSaved] = useState(false)
 
   if (!currentUser) return null
@@ -37,6 +38,7 @@ export default function PerfilPage() {
       ...currentUser,
       name: name.trim(),
       email: email.trim() || currentUser.email,
+      avatarUrl: avatarUrl || undefined,
     })
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
@@ -45,6 +47,20 @@ export default function PerfilPage() {
   function handleDelete() {
     deleteAccount()
     router.replace("/login")
+  }
+
+  function handleLogoUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setAvatarUrl(reader.result)
+        setSaved(false)
+      }
+    }
+    reader.readAsDataURL(file)
   }
 
   const roleLabels: Record<string, string> = {
@@ -56,23 +72,26 @@ export default function PerfilPage() {
 
   const companyName = currentUser.companyId
     ? companies.find((c) => c.id === currentUser.companyId)?.name
-    : currentUser.role === "SUPER_ADMIN" ? "(Global)" : "(Sem empresa)"
+    : currentUser.role === "SUPER_ADMIN"
+      ? "(Global)"
+      : "(Sem empresa)"
 
   return (
     <div className="flex flex-col gap-6 p-4">
       <div>
         <h1 className="text-xl font-bold">Meu Perfil</h1>
-        <p className="text-sm text-muted-foreground">
-          Gerencie suas informacoes pessoais
-        </p>
+        <p className="text-sm text-muted-foreground">Gerencie suas informacoes pessoais</p>
       </div>
 
-      {/* User info card */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-              <User className="h-6 w-6 text-primary" />
+            <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-primary/10">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Logo do usuario" className="h-full w-full object-cover" />
+              ) : (
+                <User className="h-6 w-6 text-primary" />
+              )}
             </div>
             <div>
               <CardTitle className="text-base">{currentUser.name}</CardTitle>
@@ -92,12 +111,28 @@ export default function PerfilPage() {
         </CardContent>
       </Card>
 
-      {/* Edit form */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Editar Informacoes</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="logo-usuario">Logo/Foto do usuario</Label>
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border bg-muted/20">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="Preview da logo" className="h-full w-full object-cover" />
+                ) : (
+                  <ImagePlus className="h-5 w-5 text-muted-foreground" />
+                )}
+              </div>
+              <div className="flex-1">
+                <Input id="logo-usuario" type="file" accept="image/*" onChange={handleLogoUpload} className="cursor-pointer" />
+                <p className="mt-1 text-xs text-muted-foreground">A imagem enviada substitui o logo da SeaNutri no topo do app.</p>
+              </div>
+            </div>
+          </div>
+
           <div className="flex flex-col gap-2">
             <Label htmlFor="name">Nome</Label>
             <div className="relative">
@@ -137,29 +172,18 @@ export default function PerfilPage() {
             <Label>Empresa</Label>
             <div className="relative">
               <Building2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={companyName}
-                disabled
-                className="pl-10 opacity-60"
-              />
+              <Input value={companyName} disabled className="pl-10 opacity-60" />
             </div>
-            <p className="text-xs text-muted-foreground">
-              A empresa nao pode ser alterada apos o cadastro inicial.
-            </p>
+            <p className="text-xs text-muted-foreground">A empresa nao pode ser alterada apos o cadastro inicial.</p>
           </div>
 
-          <Button
-            onClick={handleSave}
-            className="select-none gap-2"
-            disabled={!name.trim()}
-          >
-            <Save className="h-4 w-4" />
+          <Button onClick={handleSave} className="select-none gap-2" disabled={!name.trim()}>
+            {saved ? <Save className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
             {saved ? "Salvo!" : "Salvar Alteracoes"}
           </Button>
         </CardContent>
       </Card>
 
-      {/* Account info */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Informacoes da Conta</CardTitle>
@@ -167,9 +191,7 @@ export default function PerfilPage() {
         <CardContent className="flex flex-col gap-2 text-sm">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Membro desde</span>
-            <span>
-              {new Date(currentUser.createdAt).toLocaleDateString("pt-BR")}
-            </span>
+            <span>{new Date(currentUser.createdAt).toLocaleDateString("pt-BR")}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Nivel de acesso</span>
@@ -178,20 +200,14 @@ export default function PerfilPage() {
         </CardContent>
       </Card>
 
-      {/* Danger zone */}
       <Card className="border-destructive/30">
         <CardHeader>
-          <CardTitle className="text-base text-destructive-foreground">
-            Zona de Perigo
-          </CardTitle>
+          <CardTitle className="text-base text-destructive-foreground">Zona de Perigo</CardTitle>
         </CardHeader>
         <CardContent>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button
-                variant="destructive"
-                className="w-full select-none gap-2"
-              >
+              <Button variant="destructive" className="w-full select-none gap-2">
                 <Trash2 className="h-4 w-4" />
                 Excluir Conta
               </Button>
@@ -200,14 +216,11 @@ export default function PerfilPage() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Excluir conta?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Esta acao nao pode ser desfeita. Todos os seus dados
-                  serao removidos permanentemente.
+                  Esta acao nao pode ser desfeita. Todos os seus dados serao removidos permanentemente.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel className="select-none">
-                  Cancelar
-                </AlertDialogCancel>
+                <AlertDialogCancel className="select-none">Cancelar</AlertDialogCancel>
                 <AlertDialogAction
                   className="select-none bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   onClick={handleDelete}
