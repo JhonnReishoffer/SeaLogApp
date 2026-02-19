@@ -12,6 +12,8 @@ import type {
   Vessel,
   FormTemplate,
   FormEntry,
+  Company,
+  CompanyTemplateConfig,
 } from "@/lib/types"
 import * as store from "@/lib/store"
 
@@ -33,8 +35,18 @@ interface AppContextType {
   selectedVessel: Vessel | null
   selectVessel: (vessel: Vessel | null) => void
 
+  // Companies
+  companies: Company[]
+  companyTemplateConfigs: CompanyTemplateConfig[]
+  refreshCompanies: () => void
+  refreshCompanyTemplateConfigs: () => void
+
   // Templates
   templates: FormTemplate[]
+  refreshTemplates: () => void
+
+  // MVP demo helper
+  setDemoRole: (role: "SUPER_ADMIN" | "COMPANY_ADMIN" | "USER") => void
 
   // Entries
   entries: FormEntry[]
@@ -67,6 +79,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [templates, setTemplates] = useState<FormTemplate[]>([])
   const [entries, setEntries] = useState<FormEntry[]>([])
   const [allUsers, setAllUsers] = useState<User[]>([])
+  const [companies, setCompanies] = useState<Company[]>([])
+  const [companyTemplateConfigs, setCompanyTemplateConfigs] = useState<CompanyTemplateConfig[]>([])
   const [initialized, setInitialized] = useState(false)
 
   // Initialize store and load data
@@ -74,9 +88,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     store.initializeStore()
     const user = store.getCurrentUser()
     setCurrentUser(user)
+    setCompanies(store.getCompanies())
+    setCompanyTemplateConfigs(store.getCompanyTemplateConfigs())
     setVessels(store.getVessels())
     setSelectedVessel(store.getSelectedVessel())
-    setTemplates(store.getTemplates())
+    if (user?.role === "SUPER_ADMIN") {
+      setTemplates(store.getGlobalTemplates())
+    } else if (user?.companyId) {
+      setTemplates(store.getEffectiveTemplatesForCompany(user.companyId))
+    } else {
+      setTemplates([])
+    }
     setEntries(store.getEntries())
     setAllUsers(store.getUsers())
     setInitialized(true)
@@ -100,8 +122,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         name: email.split("@")[0],
         email,
         password,
-        company: "",
-        role: "operador",
+        companyId: null,
+        role: "USER",
         createdAt: new Date().toISOString(),
       }
       store.createUser(newUser)
@@ -121,8 +143,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         name,
         email,
         password: "",
-        company: "",
-        role: "operador",
+        companyId: null,
+        role: "USER",
         createdAt: new Date().toISOString(),
       }
       store.createUser(existingUser)
@@ -130,6 +152,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
     store.setCurrentUser(existingUser)
     setCurrentUser(existingUser)
+    if (existingUser.role === "SUPER_ADMIN") {
+      setTemplates(store.getGlobalTemplates())
+    } else if (existingUser.companyId) {
+      setTemplates(store.getEffectiveTemplatesForCompany(existingUser.companyId))
+    } else {
+      setTemplates([])
+    }
   }, [])
 
   const logout = useCallback(() => {
@@ -144,8 +173,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     store.setCurrentUser(user)
     setCurrentUser(user)
     setAllUsers(store.getUsers())
-    // Refresh vessels if company changed
+    setCompanies(store.getCompanies())
+    setCompanyTemplateConfigs(store.getCompanyTemplateConfigs())
     setVessels(store.getVessels())
+    if (user.role === "SUPER_ADMIN") {
+      setTemplates(store.getGlobalTemplates())
+    } else if (user.companyId) {
+      setTemplates(store.getEffectiveTemplatesForCompany(user.companyId))
+    } else {
+      setTemplates([])
+    }
   }, [])
 
   const deleteAccount = useCallback(() => {
@@ -169,6 +206,46 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const refreshEntries = useCallback(() => {
     setEntries(store.getEntries())
   }, [])
+
+  const refreshCompanies = useCallback(() => {
+    setCompanies(store.getCompanies())
+  }, [])
+
+  const refreshTemplates = useCallback(() => {
+    if (currentUser?.role === "SUPER_ADMIN") {
+      setTemplates(store.getGlobalTemplates())
+    } else if (currentUser?.companyId) {
+      setTemplates(store.getEffectiveTemplatesForCompany(currentUser.companyId))
+    } else {
+      setTemplates([])
+    }
+  }, [currentUser])
+
+  const setDemoRole = useCallback(
+    (role: "SUPER_ADMIN" | "COMPANY_ADMIN" | "USER") => {
+      if (!currentUser) return
+      const updated: User = { ...currentUser, role }
+      store.updateUser(updated)
+      store.setCurrentUser(updated)
+      setCurrentUser(updated)
+      // refresh dependent collections immediately
+      if (role === "SUPER_ADMIN") {
+        setVessels(store.getVessels())
+        setTemplates(store.getGlobalTemplates())
+      } else if (updated.companyId) {
+        setVessels(store.getVesselsByCompanyId(updated.companyId))
+        setTemplates(store.getEffectiveTemplatesForCompany(updated.companyId))
+      } else {
+        setTemplates([])
+      }
+    },
+    [currentUser]
+  )
+
+  const refreshCompanyTemplateConfigs = useCallback(() => {
+    setCompanyTemplateConfigs(store.getCompanyTemplateConfigs())
+    refreshTemplates()
+  }, [refreshTemplates])
 
   const handleCreateEntry = useCallback((entry: FormEntry) => {
     store.createEntry(entry)
@@ -206,7 +283,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         vessels,
         selectedVessel,
         selectVessel,
+        companies,
+        companyTemplateConfigs,
+        refreshCompanies,
+        refreshCompanyTemplateConfigs,
         templates,
+        refreshTemplates,
+        setDemoRole,
         entries,
         refreshEntries,
         createEntry: handleCreateEntry,

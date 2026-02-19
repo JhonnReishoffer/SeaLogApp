@@ -35,6 +35,8 @@ import {
   Info,
   Trash2,
   Shield,
+  Building2,
+  ClipboardList,
 } from "lucide-react"
 import { clearAllData } from "@/lib/store"
 
@@ -193,7 +195,7 @@ export default function ConfiguracoesPage() {
       </Card>
 
       {/* Security */}
-      {currentUser?.role === "admin" && (
+      {(currentUser?.role === "SUPER_ADMIN" || currentUser?.role === "COMPANY_ADMIN") && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -209,6 +211,30 @@ export default function ConfiguracoesPage() {
             >
               Gerenciar Usuarios
             </Button>
+            {currentUser?.role === "SUPER_ADMIN" && (
+              <Button
+                variant="outline"
+                className="w-full select-none mt-2"
+                onClick={() => (window.location.href = "/admin/empresas")}
+              >
+                <span className="flex items-center justify-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  Gerenciar Empresas
+                </span>
+              </Button>
+            )}
+            {currentUser?.role === "SUPER_ADMIN" && (
+              <Button
+                variant="outline"
+                className="w-full select-none mt-2"
+                onClick={() => (window.location.href = "/admin/planilhas")}
+              >
+                <span className="flex items-center justify-center gap-2">
+                  <ClipboardList className="h-4 w-4" />
+                  Gerenciar Planilhas
+                </span>
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}

@@ -23,7 +23,7 @@ import { User, Building2, Shield, Save, Trash2, Mail } from "lucide-react"
 
 export default function PerfilPage() {
   const router = useRouter()
-  const { currentUser, updateCurrentUser, deleteAccount, logout } = useApp()
+  const { currentUser, updateCurrentUser, deleteAccount, logout, companies } = useApp()
 
   const [name, setName] = useState(currentUser?.name || "")
   const [email, setEmail] = useState(currentUser?.email || "")
@@ -48,10 +48,14 @@ export default function PerfilPage() {
   }
 
   const roleLabels: Record<string, string> = {
-    admin: "Administrador",
-    supervisor: "Supervisor",
-    operador: "Operador",
+    SUPER_ADMIN: "Admin Global",
+    COMPANY_ADMIN: "Admin Empresa",
+    USER: "Usuario",
   }
+
+  const companyName = currentUser.companyId
+    ? companies.find((c) => c.id === currentUser.companyId)?.name
+    : currentUser.role === "SUPER_ADMIN" ? "(Global)" : "(Sem empresa)"
 
   return (
     <div className="flex flex-col gap-6 p-4">
@@ -78,7 +82,7 @@ export default function PerfilPage() {
         <CardContent className="flex flex-wrap gap-2">
           <Badge variant="outline" className="gap-1">
             <Building2 className="h-3 w-3" />
-            {currentUser.company}
+            {companyName}
           </Badge>
           <Badge variant="outline" className="gap-1">
             <Shield className="h-3 w-3" />
@@ -133,7 +137,7 @@ export default function PerfilPage() {
             <div className="relative">
               <Building2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                value={currentUser.company}
+                value={companyName}
                 disabled
                 className="pl-10 opacity-60"
               />

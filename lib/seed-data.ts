@@ -1,15 +1,21 @@
-import type { FormTemplate, Vessel } from "./types"
+import type { Company, FormTemplate, Vessel } from "./types"
+
+export const DEFAULT_COMPANIES: Company[] = [
+  { id: "c-seanutri", name: "SEANUTRI", createdAt: new Date().toISOString() },
+  { id: "c-asso-maritima", name: "ASSO MARÍTIMA", createdAt: new Date().toISOString() },
+  { id: "c-asgaard-bourbon", name: "ASGAARD BOURBON", createdAt: new Date().toISOString() },
+]
 
 // ==========================================
 // Default Vessels (demo data)
 // ==========================================
 
 export const DEFAULT_VESSELS: Vessel[] = [
-  { id: "v1", name: "MV Atlantic Explorer", company: "SEANUTRI" },
-  { id: "v2", name: "MV Pacific Star", company: "SEANUTRI" },
-  { id: "v3", name: "MV Southern Cross", company: "SEANUTRI" },
-  { id: "v4", name: "MV Northern Light", company: "OCEANMAR" },
-  { id: "v5", name: "MV Coral Reef", company: "OCEANMAR" },
+  { id: "v1", name: "MV Atlantic Explorer", companyId: "c-seanutri" },
+  { id: "v2", name: "MV Pacific Star", companyId: "c-seanutri" },
+  { id: "v3", name: "MV Southern Cross", companyId: "c-seanutri" },
+  { id: "v4", name: "MV Northern Light", companyId: "c-asso-maritima" },
+  { id: "v5", name: "MV Coral Reef", companyId: "c-asso-maritima" },
 ]
 
 // ==========================================
@@ -100,6 +106,7 @@ export const DEFAULT_TEMPLATES: FormTemplate[] = [
     ],
     supportsMultipleRows: true,
     createdAt: new Date().toISOString(),
+  companyIds: ["c-seanutri","c-asso-maritima","c-asgaard-bourbon"],
   },
   {
     id: "tpl-descongelamento",
@@ -201,6 +208,7 @@ export const DEFAULT_TEMPLATES: FormTemplate[] = [
     ],
     supportsMultipleRows: true,
     createdAt: new Date().toISOString(),
+  companyIds: ["c-seanutri","c-asso-maritima","c-asgaard-bourbon"],
   },
   {
     id: "tpl-equipamentos",
@@ -276,6 +284,7 @@ export const DEFAULT_TEMPLATES: FormTemplate[] = [
     ],
     supportsMultipleRows: true,
     createdAt: new Date().toISOString(),
+  companyIds: ["c-seanutri","c-asso-maritima","c-asgaard-bourbon"],
   },
   {
     id: "tpl-higienizacao",
@@ -350,5 +359,6 @@ export const DEFAULT_TEMPLATES: FormTemplate[] = [
     ],
     supportsMultipleRows: true,
     createdAt: new Date().toISOString(),
+  companyIds: ["c-seanutri","c-asso-maritima","c-asgaard-bourbon"],
   },
 ]

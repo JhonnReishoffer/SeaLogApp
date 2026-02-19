@@ -32,24 +32,29 @@ export default function AdminUsuariosPage() {
   const router = useRouter()
   const { currentUser, allUsers, refreshUsers } = useApp()
   const [editingUser, setEditingUser] = useState<UserType | null>(null)
-  const [editRole, setEditRole] = useState<UserRole>("operador")
+  const [editRole, setEditRole] = useState<UserRole>("USER")
   const [search, setSearch] = useState("")
 
   useEffect(() => {
-    if (!currentUser || currentUser.role !== "admin") {
+    if (!currentUser || (currentUser.role !== "SUPER_ADMIN" && currentUser.role !== "COMPANY_ADMIN")) {
       router.replace("/dashboard")
     }
   }, [currentUser, router])
 
-  if (!currentUser || currentUser.role !== "admin") {
+  if (!currentUser || (currentUser.role !== "SUPER_ADMIN" && currentUser.role !== "COMPANY_ADMIN")) {
     return null
   }
 
-  const filteredUsers = allUsers.filter(
+  const visibleUsers =
+    currentUser.role === "SUPER_ADMIN"
+      ? allUsers
+      : allUsers.filter((u) => u.companyId && u.companyId === currentUser.companyId)
+
+  const filteredUsers = visibleUsers.filter(
     (u) =>
       u.name.toLowerCase().includes(search.toLowerCase()) ||
       u.email.toLowerCase().includes(search.toLowerCase()) ||
-      u.company.toLowerCase().includes(search.toLowerCase())
+      (u.companyId ?? "").toLowerCase().includes(search.toLowerCase())
   )
 
   function handleEditUser(user: UserType) {
@@ -66,15 +71,15 @@ export default function AdminUsuariosPage() {
   }
 
   const roleLabels: Record<string, string> = {
-    admin: "Administrador",
-    supervisor: "Supervisor",
-    operador: "Operador",
+    SUPER_ADMIN: "Admin Global",
+    COMPANY_ADMIN: "Admin Empresa",
+    USER: "Usuario",
   }
 
   const roleBadgeColors: Record<string, string> = {
-    admin: "bg-red-500/20 text-red-500",
-    supervisor: "bg-blue-500/20 text-blue-500",
-    operador: "bg-muted text-muted-foreground",
+    SUPER_ADMIN: "bg-red-500/20 text-red-500",
+    COMPANY_ADMIN: "bg-blue-500/20 text-blue-500",
+    USER: "bg-muted text-muted-foreground",
   }
 
   return (
@@ -107,16 +112,14 @@ export default function AdminUsuariosPage() {
         </Card>
         <Card>
           <CardContent className="flex flex-col items-center p-4">
-            <p className="text-2xl font-bold">
-              {allUsers.filter((u) => u.role === "admin").length}
-            </p>
+            <p className="text-2xl font-bold">{visibleUsers.filter((u) => u.role !== "USER").length}</p>
             <p className="text-xs text-muted-foreground">Admins</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="flex flex-col items-center p-4">
             <p className="text-2xl font-bold">
-              {new Set(allUsers.map((u) => u.company).filter(Boolean)).size}
+              {new Set(visibleUsers.map((u) => u.companyId).filter(Boolean)).size}
             </p>
             <p className="text-xs text-muted-foreground">Empresas</p>
           </CardContent>
@@ -155,10 +158,10 @@ export default function AdminUsuariosPage() {
                       {user.email}
                     </p>
                     <div className="mt-1 flex items-center gap-1.5">
-                      {user.company && (
+                      {user.companyId && (
                         <Badge variant="outline" className="text-[10px] gap-0.5 px-1.5 py-0">
                           <Building2 className="h-2.5 w-2.5" />
-                          {user.company}
+                          {user.companyId}
                         </Badge>
                       )}
                       <span
@@ -199,22 +202,18 @@ export default function AdminUsuariosPage() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="operador">
-                              Operador
-                            </SelectItem>
-                            <SelectItem value="supervisor">
-                              Supervisor
-                            </SelectItem>
-                            <SelectItem value="admin">
-                              Administrador
-                            </SelectItem>
+                            {currentUser.role === "SUPER_ADMIN" && (
+                              <SelectItem value="SUPER_ADMIN">Admin Global</SelectItem>
+                            )}
+                            <SelectItem value="COMPANY_ADMIN">Admin Empresa</SelectItem>
+                            <SelectItem value="USER">Usuario</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="flex flex-col gap-1 text-sm">
                         <p className="text-muted-foreground">Empresa:</p>
                         <p className="font-medium">
-                          {user.company || "Nao definida"}
+                          {user.companyId || "Nao definida"}
                         </p>
                       </div>
                       <div className="flex flex-col gap-1 text-sm">

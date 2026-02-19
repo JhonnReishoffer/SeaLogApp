@@ -5,7 +5,7 @@ import { useTheme } from "next-themes"
 import { useApp } from "@/components/app-provider"
 import { Logo } from "@/components/logo"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Sun, Moon, LogOut, User, Settings } from "lucide-react"
+import { ArrowLeft, Sun, Moon, LogOut, User, Settings, Shield, Building2, Users } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,7 +18,10 @@ export function Header() {
   const router = useRouter()
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
-  const { currentUser, logout } = useApp()
+  const { currentUser, logout, companies, setDemoRole } = useApp()
+
+  const companyName =
+    currentUser?.companyId ? companies.find((c) => c.id === currentUser.companyId)?.name : null
 
   const isHome = pathname === "/dashboard"
 
@@ -54,9 +57,9 @@ export function Header() {
 
       <div className="flex items-center gap-1">
         {/* Company badge */}
-        {currentUser?.company && (
+        {companyName && (
           <span className="mr-2 hidden text-xs font-medium text-muted-foreground sm:inline-block">
-            {currentUser.company}
+            {companyName}
           </span>
         )}
 
@@ -94,6 +97,26 @@ export function Header() {
                 {currentUser?.email}
               </p>
             </div>
+            <DropdownMenuSeparator />
+
+            {/* MVP demo: switch role */}
+            <div className="px-2 py-1.5">
+              <p className="text-xs font-medium text-muted-foreground">Modo demonstracao</p>
+              <p className="text-[11px] text-muted-foreground">Trocar perfil (MVP)</p>
+            </div>
+            <DropdownMenuItem onClick={() => setDemoRole("USER")}>
+              <Users className="mr-2 h-4 w-4" />
+              Ver como Usuario
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setDemoRole("COMPANY_ADMIN")}>
+              <Building2 className="mr-2 h-4 w-4" />
+              Ver como Admin da Empresa
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setDemoRole("SUPER_ADMIN")}>
+              <Shield className="mr-2 h-4 w-4" />
+              Ver como Admin Global
+            </DropdownMenuItem>
+
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => router.push("/perfil")}>
               <User className="mr-2 h-4 w-4" />

@@ -15,12 +15,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       router.replace("/login")
       return
     }
-    if (!currentUser.company) {
+    if (currentUser.role !== "SUPER_ADMIN" && !currentUser.companyId) {
       router.replace("/setup-empresa")
     }
   }, [currentUser, router])
 
-  if (!currentUser || !currentUser.company) {
+  if (!currentUser || (currentUser.role !== "SUPER_ADMIN" && !currentUser.companyId)) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />

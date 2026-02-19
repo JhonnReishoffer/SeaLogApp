@@ -5,8 +5,14 @@ import { useRouter } from "next/navigation"
 import { useApp } from "@/components/app-provider"
 import { Logo } from "@/components/logo"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   Card,
   CardContent,
@@ -14,12 +20,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Building2 } from "lucide-react"
+// Building icon removed (Select handles UI)
 
 export default function SetupEmpresaPage() {
   const router = useRouter()
-  const { currentUser, updateCurrentUser } = useApp()
-  const [company, setCompany] = useState("")
+  const { currentUser, updateCurrentUser, companies } = useApp()
+  const [companyId, setCompanyId] = useState("")
   const [error, setError] = useState("")
 
   useEffect(() => {
@@ -27,7 +33,7 @@ export default function SetupEmpresaPage() {
       router.replace("/login")
       return
     }
-    if (currentUser.company) {
+    if (currentUser.role === "SUPER_ADMIN" || currentUser.companyId) {
       router.replace("/dashboard")
     }
   }, [currentUser, router])
@@ -36,23 +42,16 @@ export default function SetupEmpresaPage() {
     e.preventDefault()
     setError("")
 
-    const trimmed = company.trim().toUpperCase()
-    if (!trimmed) {
-      setError("Informe o nome da empresa")
-      return
-    }
-    if (trimmed.length < 2) {
-      setError("Nome da empresa deve ter pelo menos 2 caracteres")
+    if (!companyId) {
+      setError("Selecione a empresa")
       return
     }
 
     if (!currentUser) return
 
-    const role = trimmed === "SEANUTRI" ? "admin" : currentUser.role
     updateCurrentUser({
       ...currentUser,
-      company: trimmed,
-      role,
+      companyId,
     })
 
     router.replace("/dashboard")
@@ -78,21 +77,21 @@ export default function SetupEmpresaPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
-                <Label htmlFor="company">Nome da Empresa</Label>
-                <div className="relative">
-                  <Building2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="company"
-                    type="text"
-                    placeholder="NOME DA EMPRESA"
-                    value={company}
-                    onChange={(e) => setCompany(e.target.value.toUpperCase())}
-                    className="pl-10 uppercase"
-                    autoComplete="organization"
-                  />
-                </div>
+                <Label>Empresa</Label>
+                <Select value={companyId} onValueChange={setCompanyId}>
+                  <SelectTrigger className="select-none">
+                    <SelectValue placeholder="Selecione a empresa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {companies.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <p className="text-xs text-muted-foreground">
-                  O nome sera convertido para maiusculas automaticamente.
+                  Se sua empresa nao aparecer, peça ao Admin Global para cadastrar.
                 </p>
               </div>
 

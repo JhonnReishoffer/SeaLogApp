@@ -28,9 +28,23 @@ export async function exportToXlsx(
     if (!template) return
 
     const allFields = template.sections.flatMap((s) => s.fields)
+    // Apply export customization (MVP - per template)
+    const included = template.exportConfig?.includedFieldIds?.length
+      ? new Set(template.exportConfig.includedFieldIds)
+      : null
+    const order = template.exportConfig?.fieldOrder?.length
+      ? template.exportConfig.fieldOrder
+      : allFields.map((f) => f.id)
+    const fieldMap = new Map(allFields.map((f) => [f.id, f]))
+    const orderedFields = order
+      .map((id) => fieldMap.get(id))
+      .filter(Boolean) as typeof allFields
+    const exportFields = included
+      ? orderedFields.filter((f) => included.has(f.id))
+      : orderedFields
     const headers = [
       "Registro #",
-      ...allFields.map((f) => f.label),
+      ...exportFields.map((f) => f.label),
       "Status",
       "Responsavel",
       "Data Atualizacao",
@@ -43,7 +57,7 @@ export async function exportToXlsx(
       for (const row of entry.rows) {
         const rowData: (string | number)[] = [
           rowIndex,
-          ...allFields.map((f) => {
+          ...exportFields.map((f) => {
             const val = row.values[f.id]
             if (val === undefined || val === null || val === "") return ""
             return val as string | number

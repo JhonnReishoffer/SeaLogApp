@@ -46,8 +46,26 @@ function getMonthOptions() {
   return options
 }
 
-function createEmptyRow(day: number): FormRowData {
-  return { id: generateId(), day, values: {} }
+function guessShiftFromHour(h: number): "Manha" | "Tarde" | "Noite" {
+  if (h >= 6 && h < 12) return "Manha"
+  if (h >= 12 && h < 18) return "Tarde"
+  return "Noite"
+}
+
+function createEmptyRow(): FormRowData {
+  const now = new Date()
+  const yyyy = now.getFullYear()
+  const mm = String(now.getMonth() + 1).padStart(2, "0")
+  const dd = String(now.getDate()).padStart(2, "0")
+  const hh = String(now.getHours()).padStart(2, "0")
+  const mi = String(now.getMinutes()).padStart(2, "0")
+  return {
+    id: generateId(),
+    date: `${yyyy}-${mm}-${dd}`,
+    time: `${hh}:${mi}`,
+    shift: guessShiftFromHour(now.getHours()),
+    values: {},
+  }
 }
 
 export default function FormFillingPage() {
@@ -77,9 +95,7 @@ export default function FormFillingPage() {
   const [period, setPeriod] = useState(
     existingEntry?.period || currentMonth
   )
-  const [rows, setRows] = useState<FormRowData[]>(
-    existingEntry?.rows || [createEmptyRow(new Date().getDate())]
-  )
+  const [rows, setRows] = useState<FormRowData[]>(existingEntry?.rows || [createEmptyRow()])
   const [status, setStatus] = useState(existingEntry?.status || "rascunho" as const)
   const [saved, setSaved] = useState(false)
   const [entryRef, setEntryRef] = useState(existingEntry?.id || "")
@@ -124,7 +140,7 @@ export default function FormFillingPage() {
   )
 
   function addRow() {
-    setRows((prev) => [...prev, createEmptyRow(new Date().getDate())])
+    setRows((prev) => [...prev, createEmptyRow()])
     setSaved(false)
   }
 
@@ -144,7 +160,7 @@ export default function FormFillingPage() {
       vesselName: selectedVessel.name,
       userId: currentUser.id,
       userName: currentUser.name,
-      company: currentUser.company,
+      companyId: currentUser.companyId || "",
       period,
       rows,
       status: newStatus,

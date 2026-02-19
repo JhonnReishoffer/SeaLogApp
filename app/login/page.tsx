@@ -27,7 +27,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (currentUser) {
-      if (!currentUser.company) {
+      if (currentUser.role !== "SUPER_ADMIN" && !currentUser.companyId) {
         router.replace("/setup-empresa")
       } else {
         router.replace("/dashboard")

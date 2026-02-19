@@ -12,14 +12,17 @@ import {
 import { Ship } from "lucide-react"
 
 export function VesselSelector() {
-  const { currentUser, vessels, selectedVessel, selectVessel } = useApp()
+  const { currentUser, vessels, selectedVessel, selectVessel, companies } = useApp()
 
-  // Filter vessels by user's company
-  const companyVessels = currentUser?.company
-    ? vessels.filter(
-        (v) => v.company.toUpperCase() === currentUser.company.toUpperCase()
-      )
-    : []
+  const companyName =
+    currentUser?.companyId ? companies.find((c) => c.id === currentUser.companyId)?.name : null
+
+  const companyVessels =
+    currentUser?.role === "SUPER_ADMIN"
+      ? vessels
+      : currentUser?.companyId
+          ? vessels.filter((v) => v.companyId === currentUser.companyId)
+          : []
 
   function handleChange(vesselId: string) {
     const vessel = companyVessels.find((v) => v.id === vesselId)
@@ -37,7 +40,9 @@ export function VesselSelector() {
         <div>
           <p className="text-sm font-medium">Nenhuma embarcacao encontrada</p>
           <p className="text-xs text-muted-foreground">
-            Nao ha embarcacoes cadastradas para a empresa {currentUser?.company}.
+            {currentUser?.role === "SUPER_ADMIN"
+              ? "Nenhuma embarcacao cadastrada."
+              : `Nao ha embarcacoes cadastradas para a empresa ${companyName ?? "(sem empresa)"}.`}
           </p>
         </div>
       </div>

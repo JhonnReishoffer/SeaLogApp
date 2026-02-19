@@ -22,7 +22,13 @@ import type { FormEntryStatus } from "@/lib/types"
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { currentUser, selectedVessel, templates, entries } = useApp()
+  const { currentUser, selectedVessel, templates, entries, companies } = useApp()
+
+  const companyName = currentUser?.companyId
+    ? companies.find((c) => c.id === currentUser.companyId)?.name
+    : currentUser?.role === "SUPER_ADMIN"
+        ? "Admin Global"
+        : "Sem empresa"
 
   // Filter entries for current vessel
   const vesselEntries = selectedVessel
@@ -73,7 +79,7 @@ export default function DashboardPage() {
           Ola, {currentUser?.name}
         </h1>
         <p className="text-sm text-muted-foreground">
-          {currentUser?.company} - Painel de Controle
+          {companyName} - Painel de Controle
         </p>
       </div>
 
