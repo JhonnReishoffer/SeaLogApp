@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useApp } from "@/components/app-provider"
 import { FormRowRenderer } from "@/components/form-renderer"
@@ -33,6 +33,19 @@ export default function ReviewDetailPage() {
     : null
 
   const [correctionNote, setCorrectionNote] = useState("")
+
+  const isAdmin =
+    currentUser?.role === "SUPER_ADMIN" || currentUser?.role === "COMPANY_ADMIN"
+
+  useEffect(() => {
+    if (currentUser && !isAdmin) {
+      router.replace("/dashboard")
+    }
+  }, [currentUser, isAdmin, router])
+
+  if (!isAdmin) {
+    return null
+  }
 
   if (!entry || !template) {
     return (

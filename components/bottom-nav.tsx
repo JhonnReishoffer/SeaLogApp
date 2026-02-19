@@ -1,6 +1,7 @@
 "use client"
 
 import { usePathname, useRouter } from "next/navigation"
+import { useApp } from "@/components/app-provider"
 import { cn } from "@/lib/utils"
 import { Home, ClipboardList, CheckCircle, Download } from "lucide-react"
 
@@ -34,6 +35,15 @@ const NAV_ITEMS = [
 export function BottomNav() {
   const pathname = usePathname()
   const router = useRouter()
+  const { currentUser } = useApp()
+
+  const isAdmin =
+    currentUser?.role === "SUPER_ADMIN" || currentUser?.role === "COMPANY_ADMIN"
+
+  const visibleItems = NAV_ITEMS.filter((item) => {
+    if (item.href === "/revisao") return isAdmin
+    return true
+  })
 
   return (
     <nav
@@ -43,7 +53,7 @@ export function BottomNav() {
       }}
     >
       <div className="flex items-center justify-around py-1">
-        {NAV_ITEMS.map((item) => {
+        {visibleItems.map((item) => {
           const isActive = item.matchPaths.some((p) => pathname.startsWith(p))
           const Icon = item.icon
 

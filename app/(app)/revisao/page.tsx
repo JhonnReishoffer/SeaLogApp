@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useApp } from "@/components/app-provider"
 import { VesselSelector } from "@/components/vessel-selector"
@@ -9,7 +10,20 @@ import { Ship, ClipboardCheck } from "lucide-react"
 
 export default function RevisaoPage() {
   const router = useRouter()
-  const { selectedVessel, entries, templates } = useApp()
+  const { currentUser, selectedVessel, entries, templates } = useApp()
+
+  const isAdmin =
+    currentUser?.role === "SUPER_ADMIN" || currentUser?.role === "COMPANY_ADMIN"
+
+  useEffect(() => {
+    if (currentUser && !isAdmin) {
+      router.replace("/dashboard")
+    }
+  }, [currentUser, isAdmin, router])
+
+  if (!isAdmin) {
+    return null
+  }
 
   // Show entries that are in review or recently reviewed for this vessel
   const reviewEntries = selectedVessel
