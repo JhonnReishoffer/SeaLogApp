@@ -25,7 +25,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Plus, Trash2, Save, Send, Ship } from "lucide-react"
+import { Plus, Save, Send, Ship } from "lucide-react"
 import { generateId } from "@/lib/store"
 import type { FormEntry, FormRowData } from "@/lib/types"
 import { validateFieldValue } from "@/lib/form-validation"
@@ -71,10 +71,6 @@ function createEmptyRow(): FormRowData {
 }
 
 
-function createInitialRows(count = 5): FormRowData[] {
-  return Array.from({ length: count }, () => createEmptyRow())
-}
-
 export default function FormFillingPage() {
   const params = useParams()
   const searchParams = useSearchParams()
@@ -102,11 +98,15 @@ export default function FormFillingPage() {
   const [period, setPeriod] = useState(
     existingEntry?.period || currentMonth
   )
-  const [rows, setRows] = useState<FormRowData[]>(existingEntry?.rows || createInitialRows())
+  const [rows, setRows] = useState<FormRowData[]>(existingEntry?.rows || [])
+  const [currentRow, setCurrentRow] = useState<FormRowData>(existingEntry?.rows[0] || createEmptyRow())
+  const [selectedRowId, setSelectedRowId] = useState(existingEntry?.rows[0]?.id || "")
   const [status, setStatus] = useState(existingEntry?.status || "rascunho" as const)
   const [saved, setSaved] = useState(false)
   const [entryRef, setEntryRef] = useState(existingEntry?.id || "")
   const [validationError, setValidationError] = useState<string | null>(null)
+  const [filterTerm, setFilterTerm] = useState("")
+  const [sortBy, setSortBy] = useState<"date-desc" | "date-asc" | "shift-asc" | "shift-desc">("date-desc")
 
   // Check if we should load existing entry for this period
   useEffect(() => {
@@ -119,10 +119,14 @@ export default function FormFillingPage() {
       )
       if (found) {
         setRows(found.rows)
+        setCurrentRow(found.rows[0] || createEmptyRow())
+        setSelectedRowId(found.rows[0]?.id || "")
         setStatus(found.status)
         setEntryRef(found.id)
       } else {
-        setRows(createInitialRows())
+        setRows([])
+        setCurrentRow(createEmptyRow())
+        setSelectedRowId("")
         setStatus("rascunho")
         setEntryRef("")
       }
@@ -138,31 +142,71 @@ export default function FormFillingPage() {
     status === "aprovada" || status === "sincronizada" || status === "em_revisao"
 
   const handleFieldChange = useCallback(
-    (rowId: string, fieldId: string, value: string | number | boolean) => {
-      setRows((prev) =>
-        prev.map((row) =>
-          row.id === rowId
-            ? { ...row, values: { ...row.values, [fieldId]: value } }
-            : row
-        )
-      )
+    (fieldId: string, value: string | number | boolean) => {
+      setCurrentRow((prev) => ({
+        ...prev,
+        values: { ...prev.values, [fieldId]: value },
+      }))
       setSaved(false)
     },
     []
   )
 
-  function addRow() {
-    setRows((prev) => [...prev, createEmptyRow()])
+  function upsertCurrentRow() {
+    setRows((prev) => {
+      const exists = prev.some((row) => row.id === currentRow.id)
+      if (exists) {
+        return prev.map((row) => (row.id === currentRow.id ? currentRow : row))
+      }
+      return [...prev, currentRow]
+    })
+    setSelectedRowId(currentRow.id)
     setSaved(false)
   }
 
-  function removeRow(rowId: string) {
-    setRows((prev) => prev.filter((r) => r.id !== rowId))
+  function startNewRow() {
+    const next = createEmptyRow()
+    setCurrentRow(next)
+    setSelectedRowId("")
     setSaved(false)
   }
+
+  function selectRow(rowId: string) {
+    const row = rows.find((item) => item.id === rowId)
+    if (!row) return
+    setCurrentRow(row)
+    setSelectedRowId(row.id)
+  }
+
+  const filteredRows = useMemo(() => {
+    const term = filterTerm.trim().toLowerCase()
+    const prepared = rows.filter((row, index) => {
+      if (!term) return true
+      const valuesText = Object.values(row.values).join(" ").toLowerCase()
+      const baseText = `${index + 1} ${row.date} ${row.time} ${row.shift}`.toLowerCase()
+      return baseText.includes(term) || valuesText.includes(term)
+    })
+
+    return [...prepared].sort((a, b) => {
+      if (sortBy === "date-asc") {
+        return `${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`)
+      }
+      if (sortBy === "date-desc") {
+        return `${b.date}T${b.time}`.localeCompare(`${a.date}T${a.time}`)
+      }
+      if (sortBy === "shift-asc") {
+        return a.shift.localeCompare(b.shift)
+      }
+      return b.shift.localeCompare(a.shift)
+    })
+  }, [rows, filterTerm, sortBy])
 
   function saveEntry(newStatus: "rascunho" | "em_revisao" = "rascunho") {
     if (!currentUser || !selectedVessel || !template) return
+    if (rows.length === 0) {
+      setValidationError("Adicione ao menos um registro na tabela antes de salvar.")
+      return
+    }
 
     for (const row of rows) {
       for (const field of allFields) {
@@ -232,7 +276,7 @@ export default function FormFillingPage() {
     }
   }
 
-  if (!template) {
+    if (!template) {
     return (
       <div className="flex flex-col items-center gap-4 p-8">
         <p className="text-muted-foreground">Formulario nao encontrado</p>
@@ -338,58 +382,109 @@ export default function FormFillingPage() {
         </Card>
       )}
 
-      <div className="overflow-hidden rounded-lg border">
-        {rows.map((row, index) => (
-          <div key={row.id} className="border-b last:border-b-0">
-            <div className="flex items-center justify-between bg-muted/30 px-4 py-3">
-                <CardTitle className="text-sm font-medium">
-                  Registro {index + 1}
-                </CardTitle>
-                {!isReadOnly && rows.length > 1 && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive-foreground select-none"
-                    onClick={() => removeRow(row.id)}
-                    aria-label="Remover registro"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Registro atual</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {template.sections.map((section) => (
+            <div key={section.id} className="flex flex-col gap-3">
+              {section.title && template.sections.length > 1 && (
+                <p className="text-sm font-medium text-muted-foreground">
+                  {section.title}
+                </p>
+              )}
+              <FormRowRenderer
+                fields={section.fields}
+                row={currentRow}
+                onChange={handleFieldChange}
+                disabled={isReadOnly}
+              />
             </div>
-            <div className="p-4">
-              {template.sections.map((section) => (
-                <div key={section.id} className="flex flex-col gap-3">
-                  {section.title && template.sections.length > 1 && (
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {section.title}
-                    </p>
-                  )}
-                  <FormRowRenderer
-                    fields={section.fields}
-                    row={row}
-                    onChange={(fieldId, value) =>
-                      handleFieldChange(row.id, fieldId, value)
-                    }
-                    disabled={isReadOnly}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </CardContent>
+      </Card>
 
-      {/* Add row button */}
+      <Card>
+        <CardHeader className="gap-3">
+          <CardTitle className="text-base">Tabela de registros</CardTitle>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <input
+              className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
+              placeholder="Filtrar por data, turno ou valor"
+              value={filterTerm}
+              onChange={(e) => setFilterTerm(e.target.value)}
+            />
+            <Select value={sortBy} onValueChange={(value) => setSortBy(value as typeof sortBy)}>
+              <SelectTrigger className="select-none">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="date-desc">Mais recente primeiro</SelectItem>
+                <SelectItem value="date-asc">Mais antigo primeiro</SelectItem>
+                <SelectItem value="shift-asc">Turno (A-Z)</SelectItem>
+                <SelectItem value="shift-desc">Turno (Z-A)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-auto rounded-lg border">
+            <table className="min-w-full text-sm">
+              <thead className="bg-muted/40 text-left">
+                <tr>
+                  <th className="px-3 py-2 font-medium">#</th>
+                  <th className="px-3 py-2 font-medium">Data</th>
+                  <th className="px-3 py-2 font-medium">Hora</th>
+                  <th className="px-3 py-2 font-medium">Turno</th>
+                  <th className="px-3 py-2 font-medium">Campos preenchidos</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredRows.map((row, index) => (
+                  <tr
+                    key={row.id}
+                    className={`cursor-pointer border-t hover:bg-muted/40 ${selectedRowId === row.id ? "bg-muted" : ""}`}
+                    onClick={() => !isReadOnly && selectRow(row.id)}
+                  >
+                    <td className="px-3 py-2">{index + 1}</td>
+                    <td className="px-3 py-2">{row.date || "-"}</td>
+                    <td className="px-3 py-2">{row.time || "-"}</td>
+                    <td className="px-3 py-2">{row.shift || "-"}</td>
+                    <td className="px-3 py-2">{Object.values(row.values).filter((value) => value !== "" && value !== null && value !== undefined).length}</td>
+                  </tr>
+                ))}
+                {filteredRows.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-3 py-5 text-center text-muted-foreground">
+                      Nenhum registro encontrado.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
       {!isReadOnly && (
-        <Button
-          variant="outline"
-          className="w-full select-none gap-2 border-dashed"
-          onClick={addRow}
-        >
-          <Plus className="h-4 w-4" />
-          Adicionar Registro
-        </Button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button className="select-none gap-2" onClick={upsertCurrentRow}>
+            <Plus className="h-4 w-4" />
+            Adicionar Registro
+          </Button>
+          <Button variant="outline" className="select-none" onClick={startNewRow}>
+            Novo Registro
+          </Button>
+        </div>
+      )}
+
+      {rows.length === 0 && (
+        <Card className="border-amber-500/20 bg-amber-500/5">
+          <CardContent className="p-4 text-sm text-amber-900">
+            Adicione ao menos um registro na tabela para salvar como rascunho ou enviar para revisao.
+          </CardContent>
+        </Card>
       )}
 
       {/* Action buttons */}
@@ -399,6 +494,7 @@ export default function FormFillingPage() {
             variant="outline"
             className="select-none gap-2"
             onClick={() => saveEntry("rascunho")}
+            disabled={rows.length === 0}
           >
             <Save className="h-4 w-4" />
             {saved ? "Salvo" : "Salvar Rascunho"}
@@ -425,6 +521,7 @@ export default function FormFillingPage() {
                 <AlertDialogAction
                   className="select-none"
                   onClick={() => saveEntry("em_revisao")}
+                  disabled={rows.length === 0}
                 >
                   Confirmar Envio
                 </AlertDialogAction>
