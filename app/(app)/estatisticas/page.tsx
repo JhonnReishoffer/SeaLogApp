@@ -114,7 +114,17 @@ export default function EstatisticasPage() {
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="status" tickLine={false} axisLine={false} fontSize={12} />
               <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={28} />
-              <Tooltip cursor={{ fill: "hsl(var(--muted))" }} />
+              <Tooltip
+                cursor={{ fill: "hsl(var(--muted) / 0.45)" }}
+                contentStyle={{
+                  backgroundColor: "#ffffff",
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: "0.5rem",
+                  color: "#111827",
+                }}
+                labelStyle={{ color: "#111827", fontWeight: 600 }}
+                itemStyle={{ color: "#111827" }}
+              />
               <Bar dataKey="total" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
