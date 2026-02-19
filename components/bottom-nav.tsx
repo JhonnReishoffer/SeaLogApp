@@ -37,11 +37,11 @@ export function BottomNav() {
   const router = useRouter()
   const { currentUser } = useApp()
 
-  const isAdmin =
-    currentUser?.role === "SUPER_ADMIN" || currentUser?.role === "COMPANY_ADMIN"
+  const canReview =
+    currentUser?.role === "SUPER_ADMIN" || currentUser?.role === "NUTRI_ADMIN"
 
   const visibleItems = NAV_ITEMS.filter((item) => {
-    if (item.href === "/revisao") return isAdmin
+    if (item.href === "/revisao") return canReview
     return true
   })
 

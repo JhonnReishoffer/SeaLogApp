@@ -50,6 +50,7 @@ export default function PerfilPage() {
   const roleLabels: Record<string, string> = {
     SUPER_ADMIN: "Admin Global",
     COMPANY_ADMIN: "Admin Empresa",
+    NUTRI_ADMIN: "Nutri Admin",
     USER: "Usuario",
   }
 

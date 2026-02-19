@@ -2,7 +2,7 @@
 // SeaLogApp - Core Type Definitions (MVP Front)
 // ==========================================
 
-export type UserRole = "SUPER_ADMIN" | "COMPANY_ADMIN" | "USER"
+export type UserRole = "SUPER_ADMIN" | "COMPANY_ADMIN" | "NUTRI_ADMIN" | "USER"
 
 export interface Company {
   id: string

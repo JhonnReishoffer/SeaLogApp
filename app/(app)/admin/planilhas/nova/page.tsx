@@ -29,6 +29,7 @@ import { ArrowLeft, GripVertical, Plus, Save, Trash2 } from "lucide-react"
 import type { FormField, FormSection, FormTemplate } from "@/lib/types"
 import { createGlobalTemplate, generateId } from "@/lib/store"
 import { MultiSelect } from "@/components/multi-select"
+import { toast } from "@/hooks/use-toast"
 
 const FIELD_TYPES = [
   { value: "text", label: "Texto" },
@@ -59,7 +60,6 @@ export default function NovaPlanilhaPage() {
   const [type, setType] = useState("custom")
   const [version, setVersion] = useState("1.0")
   const [description, setDescription] = useState("")
-  const [supportsMultipleRows, setSupportsMultipleRows] = useState(true)
   const [companyIds, setCompanyIds] = useState<string[]>([])
 
   const [sections, setSections] = useState<FormSection[]>([
@@ -90,12 +90,12 @@ export default function NovaPlanilhaPage() {
   const [draggingFieldId, setDraggingFieldId] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!currentUser || currentUser.role !== "SUPER_ADMIN") {
+    if (!currentUser || !["SUPER_ADMIN", "NUTRI_ADMIN"].includes(currentUser.role)) {
       router.replace("/dashboard")
     }
   }, [currentUser, router])
 
-  if (!currentUser || currentUser.role !== "SUPER_ADMIN") return null
+  if (!currentUser || !["SUPER_ADMIN", "NUTRI_ADMIN"].includes(currentUser.role)) return null
 
   function addField() {
     const label = fieldLabel.trim()
@@ -194,12 +194,13 @@ export default function NovaPlanilhaPage() {
       version: version.trim() || "1.0",
       description: description.trim(),
       sections,
-      supportsMultipleRows,
+      supportsMultipleRows: true,
       createdAt: new Date().toISOString(),
       companyIds: companyIds.length > 0 ? companyIds : [],
     }
     createGlobalTemplate(tpl)
     refreshTemplates()
+    toast({ title: "Planilha criada", description: "A nova planilha foi salva com sucesso." })
     router.push(`/admin/planilhas/${tpl.id}`)
   }
 
@@ -245,14 +246,6 @@ export default function NovaPlanilhaPage() {
           <div className="grid gap-2">
             <Label>Descricao</Label>
             <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descreva o objetivo do registro..." />
-          </div>
-
-          <div className="flex items-center justify-between rounded-lg border p-3">
-            <div>
-              <p className="text-sm font-medium">Suporta multiplos registros</p>
-              <p className="text-xs text-muted-foreground">Permite varias linhas (data/hora/turno) por periodo</p>
-            </div>
-            <Switch checked={supportsMultipleRows} onCheckedChange={setSupportsMultipleRows} />
           </div>
 
           <div className="grid gap-2">
@@ -396,14 +389,14 @@ export default function NovaPlanilhaPage() {
               {sections[0].fields.map((f) => (
                 <div
                   key={f.id}
-                  className="flex items-center justify-between rounded-lg border px-3 py-2"
+                  className="flex cursor-pointer items-center justify-between rounded-lg border px-3 py-2 transition-colors hover:bg-muted/40"
                   draggable
                   onDragStart={() => setDraggingFieldId(f.id)}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={() => moveFieldByDrag(f.id)}
                   onDragEnd={() => setDraggingFieldId(null)}
                 >
-                  <button type="button" className="flex min-w-0 flex-1 items-center gap-2 text-left" onClick={() => startEditField(f.id)}>
+                  <button type="button" className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left" onClick={() => startEditField(f.id)}>
                     <GripVertical className="h-4 w-4 text-muted-foreground" />
                     <p className="truncate text-sm font-medium">{f.label}</p>
                     <p className="text-xs text-muted-foreground">{f.id} • {f.type}{f.required ? " • obrigatorio" : ""}</p>

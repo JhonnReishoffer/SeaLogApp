@@ -28,15 +28,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Building2, Ship, Plus, Save, Trash2, ClipboardList } from "lucide-react"
+import { Building2, Ship, Plus, Save, Trash2, ClipboardList, Pencil } from "lucide-react"
 import type { Vessel } from "@/lib/types"
-import { addVessel, deleteCompany, generateId, getCompanyById, updateCompany } from "@/lib/store"
+import { addVessel, countEntriesByVessel, deleteCompany, deleteVessel, generateId, getCompanyById, updateCompany, updateVessel } from "@/lib/store"
+import { toast } from "@/hooks/use-toast"
 
 export default function AdminEmpresaDetailPage() {
   const router = useRouter()
   const params = useParams<{ companyId: string }>()
   const companyId = params.companyId
-  const { currentUser, companies, vessels, refreshCompanies, refreshTemplates } = useApp()
+  const { currentUser, companies, vessels, refreshCompanies, refreshTemplates, refreshVessels } = useApp()
 
   const company = useMemo(
     () => companies.find((c) => c.id === companyId) ?? getCompanyById(companyId),
@@ -46,6 +47,8 @@ export default function AdminEmpresaDetailPage() {
   const [openVessel, setOpenVessel] = useState(false)
   const [vesselName, setVesselName] = useState("")
   const [companyName, setCompanyName] = useState(company?.name ?? "")
+  const [editingVessel, setEditingVessel] = useState<Vessel | null>(null)
+  const [editingVesselName, setEditingVesselName] = useState("")
 
   useEffect(() => {
     if (!currentUser || currentUser.role !== "SUPER_ADMIN") {
@@ -76,23 +79,48 @@ export default function AdminEmpresaDetailPage() {
     if (!trimmed) return
     const v: Vessel = { id: `v-${generateId()}`, name: trimmed, companyId }
     addVessel(v)
-    router.refresh()
+    refreshVessels()
     setVesselName("")
     setOpenVessel(false)
+    toast({ title: "Embarcacao criada", description: "A embarcacao foi cadastrada com sucesso." })
   }
 
   function handleSaveCompany() {
     const trimmed = companyName.trim()
     if (!trimmed) return
-    updateCompany({ ...company, name: trimmed })
+    updateCompany({ id: company!.id, name: trimmed, createdAt: company!.createdAt })
     refreshCompanies()
+    toast({ title: "Empresa salva", description: "As alteracoes foram salvas com sucesso." })
   }
 
   function handleDeleteCompany() {
     deleteCompany(companyId)
     refreshCompanies()
     refreshTemplates()
+    refreshVessels()
     router.push("/admin/empresas")
+  }
+
+  function handleStartEditVessel(vessel: Vessel) {
+    setEditingVessel(vessel)
+    setEditingVesselName(vessel.name)
+  }
+
+  function handleSaveVessel() {
+    if (!editingVessel) return
+    const trimmed = editingVesselName.trim()
+    if (!trimmed) return
+    updateVessel({ ...editingVessel, name: trimmed })
+    refreshVessels()
+    toast({ title: "Embarcacao salva", description: "Nome da embarcacao atualizado com sucesso." })
+    setEditingVessel(null)
+    setEditingVesselName("")
+  }
+
+  function handleDeleteVessel(vesselId: string) {
+    deleteVessel(vesselId)
+    refreshVessels()
+    toast({ title: "Embarcacao excluida", description: "A embarcacao e seus dados relacionados foram removidos." })
   }
 
   return (
@@ -131,6 +159,23 @@ export default function AdminEmpresaDetailPage() {
               <CardDescription>Edite o nome ou exclua a empresa (remove embarcacoes/relatorios vinculados)</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
+              <Dialog open={Boolean(editingVessel)} onOpenChange={(open) => !open && setEditingVessel(null)}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Editar embarcacao</DialogTitle>
+                    <DialogDescription>Atualize o nome da embarcacao.</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-2 py-2">
+                    <Label>Nome</Label>
+                    <Input value={editingVesselName} onChange={(e) => setEditingVesselName(e.target.value)} />
+                  </div>
+                  <DialogFooter>
+                    <Button variant="secondary" onClick={() => setEditingVessel(null)}>Cancelar</Button>
+                    <Button onClick={handleSaveVessel}>Salvar</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
               <div className="grid gap-2">
                 <Label>Nome</Label>
                 <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
@@ -202,14 +247,44 @@ export default function AdminEmpresaDetailPage() {
               </Dialog>
 
               <div className="grid gap-2">
-                {companyVessels.map((v) => (
-                  <div key={v.id} className="flex items-center justify-between rounded-lg border px-3 py-2">
-                    <div>
-                      <p className="text-sm font-medium">{v.name}</p>
-                      <p className="text-xs text-muted-foreground">ID: {v.id}</p>
+                {companyVessels.map((v) => {
+                  const entriesCount = countEntriesByVessel(v.id)
+                  return (
+                    <div key={v.id} className="flex items-center justify-between rounded-lg border px-3 py-2">
+                      <div>
+                        <p className="text-sm font-medium">{v.name}</p>
+                        <p className="text-xs text-muted-foreground">ID: {v.id}</p>
+                        <p className="text-xs text-muted-foreground">{entriesCount} registro(s)</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => handleStartEditVessel(v)} aria-label="Editar embarcacao">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" aria-label="Excluir embarcacao">
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir embarcacao?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {entriesCount > 0
+                                  ? "Esta embarcacao possui registros. Ao excluir, todos os dados relacionados tambem serao removidos."
+                                  : "Esta embarcacao nao possui registros e pode ser excluida com seguranca."}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteVessel(v.id)}>Excluir</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
 
                 {companyVessels.length === 0 && (
                   <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">

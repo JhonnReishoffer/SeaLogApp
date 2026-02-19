@@ -195,7 +195,7 @@ export default function ConfiguracoesPage() {
       </Card>
 
       {/* Security */}
-      {(currentUser?.role === "SUPER_ADMIN" || currentUser?.role === "COMPANY_ADMIN") && (
+      {(currentUser?.role === "SUPER_ADMIN" || currentUser?.role === "COMPANY_ADMIN" || currentUser?.role === "NUTRI_ADMIN") && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -223,7 +223,7 @@ export default function ConfiguracoesPage() {
                 </span>
               </Button>
             )}
-            {currentUser?.role === "SUPER_ADMIN" && (
+            {(currentUser?.role === "SUPER_ADMIN" || currentUser?.role === "NUTRI_ADMIN") && (
               <Button
                 variant="outline"
                 className="w-full select-none mt-2"

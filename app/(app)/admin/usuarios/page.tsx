@@ -27,6 +27,7 @@ import {
 import { Users, Shield, Building2, User, Pencil, ShieldAlert } from "lucide-react"
 import type { User as UserType, UserRole } from "@/lib/types"
 import { updateUser, getUsers } from "@/lib/store"
+import { toast } from "@/hooks/use-toast"
 
 export default function AdminUsuariosPage() {
   const router = useRouter()
@@ -67,18 +68,21 @@ export default function AdminUsuariosPage() {
     const updated = { ...editingUser, role: editRole }
     updateUser(updated)
     refreshUsers()
+    toast({ title: "Usuario salvo", description: "Permissoes atualizadas com sucesso." })
     setEditingUser(null)
   }
 
   const roleLabels: Record<string, string> = {
     SUPER_ADMIN: "Admin Global",
     COMPANY_ADMIN: "Admin Empresa",
+    NUTRI_ADMIN: "Nutri Admin",
     USER: "Usuario",
   }
 
   const roleBadgeColors: Record<string, string> = {
     SUPER_ADMIN: "bg-red-500/20 text-red-500",
     COMPANY_ADMIN: "bg-blue-500/20 text-blue-500",
+    NUTRI_ADMIN: "bg-emerald-500/20 text-emerald-500",
     USER: "bg-muted text-muted-foreground",
   }
 
@@ -206,6 +210,7 @@ export default function AdminUsuariosPage() {
                               <SelectItem value="SUPER_ADMIN">Admin Global</SelectItem>
                             )}
                             <SelectItem value="COMPANY_ADMIN">Admin Empresa</SelectItem>
+                            <SelectItem value="NUTRI_ADMIN">Nutri Admin</SelectItem>
                             <SelectItem value="USER">Usuario</SelectItem>
                           </SelectContent>
                         </Select>

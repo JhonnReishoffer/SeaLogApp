@@ -14,7 +14,7 @@ export default function AdminPlanilhasPage() {
   const [search, setSearch] = useState("")
 
   useEffect(() => {
-    if (!currentUser || currentUser.role !== "SUPER_ADMIN") {
+    if (!currentUser || !["SUPER_ADMIN", "NUTRI_ADMIN"].includes(currentUser.role)) {
       router.replace("/dashboard")
       return
     }
@@ -27,7 +27,7 @@ export default function AdminPlanilhasPage() {
     return templates.filter((t) => (t.name + " " + t.shortName + " " + t.type).toLowerCase().includes(q))
   }, [templates, search])
 
-  if (!currentUser || currentUser.role !== "SUPER_ADMIN") return null
+  if (!currentUser || !["SUPER_ADMIN", "NUTRI_ADMIN"].includes(currentUser.role)) return null
 
   return (
     <div className="flex flex-col gap-6 p-4">
