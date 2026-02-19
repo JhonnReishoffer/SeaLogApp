@@ -86,6 +86,8 @@ export default function NovaPlanilhaPage() {
   const [fieldMax, setFieldMax] = useState("")
   const [fieldMaxTimeFromFieldId, setFieldMaxTimeFromFieldId] = useState("")
   const [fieldMaxTimeOffsetMinutes, setFieldMaxTimeOffsetMinutes] = useState("0")
+  const [fieldDependsOnSelectFieldId, setFieldDependsOnSelectFieldId] = useState("")
+  const [fieldDependsOnSelectValue, setFieldDependsOnSelectValue] = useState("Sim")
   const [temperatureConditionalEnabled, setTemperatureConditionalEnabled] = useState(false)
   const [temperatureConditionalOperator, setTemperatureConditionalOperator] = useState<"lt" | "lte" | "gt" | "gte">("lt")
   const [temperatureConditionalThreshold, setTemperatureConditionalThreshold] = useState("")
@@ -124,6 +126,8 @@ export default function NovaPlanilhaPage() {
       max: fieldType === "number" || fieldType === "temperature" ? Number(fieldMax || "") || undefined : undefined,
       maxTimeFromFieldId: fieldType === "time" ? fieldMaxTimeFromFieldId || undefined : undefined,
       maxTimeOffsetMinutes: fieldType === "time" ? Number(fieldMaxTimeOffsetMinutes || "0") : undefined,
+      dependsOnSelectFieldId: fieldDependsOnSelectFieldId || undefined,
+      dependsOnSelectValue: fieldDependsOnSelectFieldId ? fieldDependsOnSelectValue : undefined,
       temperatureConditional:
         fieldType === "temperature" && temperatureConditionalEnabled && temperatureConditionalThreshold !== ""
           ? {
@@ -155,6 +159,8 @@ export default function NovaPlanilhaPage() {
     setFieldMax("")
     setFieldMaxTimeFromFieldId("")
     setFieldMaxTimeOffsetMinutes("0")
+    setFieldDependsOnSelectFieldId("")
+    setFieldDependsOnSelectValue("Sim")
     setTemperatureConditionalEnabled(false)
     setTemperatureConditionalOperator("lt")
     setTemperatureConditionalThreshold("")
@@ -177,6 +183,8 @@ export default function NovaPlanilhaPage() {
     setFieldMax(field.max?.toString() || "")
     setFieldMaxTimeFromFieldId(field.maxTimeFromFieldId || "")
     setFieldMaxTimeOffsetMinutes(String(field.maxTimeOffsetMinutes ?? 0))
+    setFieldDependsOnSelectFieldId(field.dependsOnSelectFieldId || "")
+    setFieldDependsOnSelectValue(field.dependsOnSelectValue || "Sim")
     setTemperatureConditionalEnabled(!!field.temperatureConditional)
     setTemperatureConditionalOperator(field.temperatureConditional?.operator || "lt")
     setTemperatureConditionalThreshold(field.temperatureConditional?.threshold?.toString() || "")
@@ -307,6 +315,8 @@ export default function NovaPlanilhaPage() {
                   setFieldMax("")
                   setFieldMaxTimeFromFieldId("")
                   setFieldMaxTimeOffsetMinutes("0")
+                  setFieldDependsOnSelectFieldId("")
+                  setFieldDependsOnSelectValue("Sim")
                   setTemperatureConditionalEnabled(false)
                   setTemperatureConditionalOperator("lt")
                   setTemperatureConditionalThreshold("")
@@ -434,6 +444,34 @@ export default function NovaPlanilhaPage() {
                     </div>
                   </div>
                 )}
+
+
+                <div className="grid gap-2 rounded-lg border p-3">
+                  <Label>Dependencia por selecao</Label>
+                  <Select value={fieldDependsOnSelectFieldId || "none"} onValueChange={(v) => setFieldDependsOnSelectFieldId(v === "none" ? "" : v)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sem dependencia" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sem dependencia</SelectItem>
+                      {sections[0].fields.filter((f) => f.id !== editingFieldId && f.type === "select").map((f) => (
+                        <SelectItem key={f.id} value={f.id}>{f.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {fieldDependsOnSelectFieldId && (
+                    <Select value={fieldDependsOnSelectValue} onValueChange={setFieldDependsOnSelectValue}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Sim">Sim</SelectItem>
+                        <SelectItem value="Nao">Nao</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                  <p className="text-xs text-muted-foreground">Quando a selecao escolhida for igual ao valor acima, este campo fica bloqueado em cinza claro.</p>
+                </div>
 
                 {fieldType !== "temperature" && fieldType !== "select" && (
                   <div className="grid gap-2">

@@ -20,6 +20,7 @@ interface FormFieldRendererProps {
   rowValues: Record<string, string | number | boolean>
   onChange: (fieldId: string, value: string | number | boolean) => void
   disabled?: boolean
+  dependencyLocked?: boolean
 }
 
 export function FormFieldRenderer({
@@ -28,6 +29,7 @@ export function FormFieldRenderer({
   rowValues,
   onChange,
   disabled = false,
+  dependencyLocked = false,
 }: FormFieldRendererProps) {
   const widthClass =
     field.width === "full"
@@ -39,6 +41,8 @@ export function FormFieldRenderer({
   const stringVal = value !== undefined && value !== null ? String(value) : ""
   const fieldError = validateFieldValue(field, rowValues)
   const showRequiredAsterisk = field.required && isEmptyValue(rowValues[field.id])
+  const isDisabled = disabled || dependencyLocked
+  const lockedClass = dependencyLocked ? "bg-muted/70 text-muted-foreground border-muted" : ""
 
   function renderField() {
     switch (field.type) {
@@ -55,8 +59,8 @@ export function FormFieldRenderer({
             min={field.min}
             max={field.max}
             placeholder={field.placeholder || (field.unit ? `${field.unit}` : "")}
-            className="text-base"
-            disabled={disabled}
+            className={cn("text-base", lockedClass)}
+            disabled={isDisabled}
           />
         )
 
@@ -66,8 +70,8 @@ export function FormFieldRenderer({
             type="time"
             value={stringVal}
             onChange={(e) => onChange(field.id, e.target.value)}
-            className="text-base"
-            disabled={disabled}
+            className={cn("text-base", lockedClass)}
+            disabled={isDisabled}
           />
         )
 
@@ -77,8 +81,8 @@ export function FormFieldRenderer({
             type="date"
             value={stringVal}
             onChange={(e) => onChange(field.id, e.target.value)}
-            className="text-base"
-            disabled={disabled}
+            className={cn("text-base", lockedClass)}
+            disabled={isDisabled}
           />
         )
 
@@ -89,8 +93,8 @@ export function FormFieldRenderer({
             value={stringVal}
             onChange={(e) => onChange(field.id, e.target.value)}
             placeholder={field.placeholder}
-            className="text-base"
-            disabled={disabled}
+            className={cn("text-base", lockedClass)}
+            disabled={isDisabled}
           />
         )
 
@@ -101,8 +105,8 @@ export function FormFieldRenderer({
             onChange={(e) => onChange(field.id, e.target.value)}
             placeholder={field.placeholder}
             rows={2}
-            className="text-base"
-            disabled={disabled}
+            className={cn("text-base", lockedClass)}
+            disabled={isDisabled}
           />
         )
 
@@ -111,9 +115,9 @@ export function FormFieldRenderer({
           <Select
             value={stringVal}
             onValueChange={(v) => onChange(field.id, v)}
-            disabled={disabled}
+            disabled={isDisabled}
           >
-            <SelectTrigger className="text-base select-none">
+            <SelectTrigger className={cn("text-base select-none", lockedClass)}>
               <SelectValue placeholder="Selecione..." />
             </SelectTrigger>
             <SelectContent>
@@ -128,15 +132,15 @@ export function FormFieldRenderer({
 
       case "checkbox":
         return (
-          <label className="flex items-center gap-2 select-none">
+          <label className={cn("flex items-center gap-2 select-none rounded-md border px-3 py-2", dependencyLocked && "bg-muted/70 border-muted") }>
             <input
               type="checkbox"
               checked={!!value}
               onChange={(e) => onChange(field.id, e.target.checked)}
-              disabled={disabled}
+              disabled={isDisabled}
               className="h-5 w-5 rounded border-input accent-primary"
             />
-            <span className="text-sm">{field.placeholder || "Sim"}</span>
+            <span className={cn("text-sm", dependencyLocked && "text-muted-foreground")}>{field.placeholder || "Sim"}</span>
           </label>
         )
 
@@ -147,8 +151,8 @@ export function FormFieldRenderer({
             value={stringVal}
             onChange={(e) => onChange(field.id, e.target.value)}
             placeholder={field.placeholder}
-            className="text-base"
-            disabled={disabled}
+            className={cn("text-base", lockedClass)}
+            disabled={isDisabled}
           />
         )
     }
@@ -180,6 +184,15 @@ interface FormRowRendererProps {
   disabled?: boolean
 }
 
+function isFieldDependencyLocked(
+  field: FormField,
+  rowValues: Record<string, string | number | boolean>
+) {
+  if (!field.dependsOnSelectFieldId || !field.dependsOnSelectValue) return false
+  const selectedValue = rowValues[field.dependsOnSelectFieldId]
+  return String(selectedValue ?? "").toLowerCase() === field.dependsOnSelectValue.toLowerCase()
+}
+
 export function FormRowRenderer({
   fields,
   row,
@@ -189,6 +202,7 @@ export function FormRowRenderer({
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       {fields.map((field) => (
+        
         <FormFieldRenderer
           key={field.id}
           field={field}
@@ -196,6 +210,7 @@ export function FormRowRenderer({
           rowValues={row.values}
           onChange={onChange}
           disabled={disabled}
+          dependencyLocked={isFieldDependencyLocked(field, row.values)}
         />
       ))}
     </div>

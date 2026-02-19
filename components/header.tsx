@@ -52,7 +52,7 @@ export function Header() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
         ) : null}
-        <Logo size="sm" />
+        <Logo size="sm" href="/dashboard" />
       </div>
 
       <div className="flex items-center gap-1">
