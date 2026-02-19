@@ -113,6 +113,11 @@ export default function EditarPlanilhaPage() {
   const [fieldMax, setFieldMax] = useState("")
   const [fieldMaxTimeFromFieldId, setFieldMaxTimeFromFieldId] = useState("")
   const [fieldMaxTimeOffsetMinutes, setFieldMaxTimeOffsetMinutes] = useState("0")
+  const [temperatureConditionalEnabled, setTemperatureConditionalEnabled] = useState(false)
+  const [temperatureConditionalOperator, setTemperatureConditionalOperator] = useState<"lt" | "lte" | "gt" | "gte">("lt")
+  const [temperatureConditionalThreshold, setTemperatureConditionalThreshold] = useState("")
+  const [temperatureConditionalTrueLabel, setTemperatureConditionalTrueLabel] = useState("OK")
+  const [temperatureConditionalFalseLabel, setTemperatureConditionalFalseLabel] = useState("NAO OK")
   const [editingFieldId, setEditingFieldId] = useState<string | null>(null)
   const [draggingFieldId, setDraggingFieldId] = useState<string | null>(null)
 
@@ -148,6 +153,15 @@ export default function EditarPlanilhaPage() {
       max: fieldType === "number" || fieldType === "temperature" ? Number(fieldMax || "") || undefined : undefined,
       maxTimeFromFieldId: fieldType === "time" ? fieldMaxTimeFromFieldId || undefined : undefined,
       maxTimeOffsetMinutes: fieldType === "time" ? Number(fieldMaxTimeOffsetMinutes || "0") : undefined,
+      temperatureConditional:
+        fieldType === "temperature" && temperatureConditionalEnabled && temperatureConditionalThreshold !== ""
+          ? {
+              operator: temperatureConditionalOperator,
+              threshold: Number(temperatureConditionalThreshold),
+              trueLabel: temperatureConditionalTrueLabel.trim() || "OK",
+              falseLabel: temperatureConditionalFalseLabel.trim() || "NAO OK",
+            }
+          : undefined,
     }
 
     setSections((prev) => {
@@ -171,6 +185,11 @@ export default function EditarPlanilhaPage() {
     setFieldMax("")
     setFieldMaxTimeFromFieldId("")
     setFieldMaxTimeOffsetMinutes("0")
+    setTemperatureConditionalEnabled(false)
+    setTemperatureConditionalOperator("lt")
+    setTemperatureConditionalThreshold("")
+    setTemperatureConditionalTrueLabel("OK")
+    setTemperatureConditionalFalseLabel("NAO OK")
     setEditingFieldId(null)
     setOpenField(false)
   }
@@ -188,6 +207,11 @@ export default function EditarPlanilhaPage() {
     setFieldMax(field.max?.toString() || "")
     setFieldMaxTimeFromFieldId(field.maxTimeFromFieldId || "")
     setFieldMaxTimeOffsetMinutes(String(field.maxTimeOffsetMinutes ?? 0))
+    setTemperatureConditionalEnabled(!!field.temperatureConditional)
+    setTemperatureConditionalOperator(field.temperatureConditional?.operator || "lt")
+    setTemperatureConditionalThreshold(field.temperatureConditional?.threshold?.toString() || "")
+    setTemperatureConditionalTrueLabel(field.temperatureConditional?.trueLabel || "OK")
+    setTemperatureConditionalFalseLabel(field.temperatureConditional?.falseLabel || "NAO OK")
     setOpenField(true)
   }
 
@@ -358,6 +382,11 @@ export default function EditarPlanilhaPage() {
                   setFieldMax("")
                   setFieldMaxTimeFromFieldId("")
                   setFieldMaxTimeOffsetMinutes("0")
+                  setTemperatureConditionalEnabled(false)
+                  setTemperatureConditionalOperator("lt")
+                  setTemperatureConditionalThreshold("")
+                  setTemperatureConditionalTrueLabel("OK")
+                  setTemperatureConditionalFalseLabel("NAO OK")
                 }}
               >
                 <Plus className="h-4 w-4" />
@@ -419,6 +448,47 @@ export default function EditarPlanilhaPage() {
                   </div>
                 )}
 
+                {fieldType === "temperature" && (
+                  <div className="grid gap-3 rounded-lg border p-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium">Condicional de temperatura (opcional)</p>
+                      <Switch checked={temperatureConditionalEnabled} onCheckedChange={setTemperatureConditionalEnabled} />
+                    </div>
+                    {temperatureConditionalEnabled && (
+                      <>
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                          <div className="grid gap-2">
+                            <Label>Operador</Label>
+                            <Select value={temperatureConditionalOperator} onValueChange={(v) => setTemperatureConditionalOperator(v as "lt" | "lte" | "gt" | "gte") }>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="lt">&lt;</SelectItem>
+                                <SelectItem value="lte">&lt;=</SelectItem>
+                                <SelectItem value="gt">&gt;</SelectItem>
+                                <SelectItem value="gte">&gt;=</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="grid gap-2">
+                            <Label>Valor</Label>
+                            <Input type="number" value={temperatureConditionalThreshold} onChange={(e) => setTemperatureConditionalThreshold(e.target.value)} placeholder="80" />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                          <div className="grid gap-2">
+                            <Label>Se verdadeiro</Label>
+                            <Input value={temperatureConditionalTrueLabel} onChange={(e) => setTemperatureConditionalTrueLabel(e.target.value)} placeholder="OK" />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label>Se falso</Label>
+                            <Input value={temperatureConditionalFalseLabel} onChange={(e) => setTemperatureConditionalFalseLabel(e.target.value)} placeholder="NAO OK" />
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+
                 {fieldType === "time" && (
                   <div className="grid gap-2 rounded-lg border p-3">
                     <Label>Regra de dependencia de horario</Label>
@@ -470,7 +540,7 @@ export default function EditarPlanilhaPage() {
                   <button type="button" className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left" onClick={() => startEditField(f.id)}>
                     <GripVertical className="h-4 w-4 text-muted-foreground" />
                     <p className="truncate text-sm font-medium">{f.label}</p>
-                    <p className="text-xs text-muted-foreground">{f.id} • {f.type}{f.required ? " • obrigatorio" : ""}</p>
+                    <p className="text-xs text-muted-foreground">{f.id} • {f.type}{f.required ? " • obrigatorio" : ""}{f.temperatureConditional ? ` • condicional: ${f.temperatureConditional.operator} ${f.temperatureConditional.threshold}` : ""}</p>
                   </button>
                   <div className="flex items-center gap-1">
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeField(f.id)} aria-label="Remover">

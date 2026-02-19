@@ -48,6 +48,13 @@ function getMonthOptions() {
   return options
 }
 
+function formatDateBr(value: string) {
+  if (!value) return "-"
+  const [year, month, day] = value.split("-")
+  if (!year || !month || !day) return value
+  return `${day}/${month}/${year}`
+}
+
 function guessShiftFromHour(h: number): "Manha" | "Tarde" | "Noite" {
   if (h >= 6 && h < 12) return "Manha"
   if (h >= 12 && h < 18) return "Tarde"
@@ -94,10 +101,11 @@ export default function FormFillingPage() {
 
   const monthOptions = useMemo(() => getMonthOptions(), [])
   const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`
+  const [currentYear, currentMonthNumber] = (existingEntry?.period || currentMonth).split("-")
 
-  const [period, setPeriod] = useState(
-    existingEntry?.period || currentMonth
-  )
+  const [period, setPeriod] = useState(existingEntry?.period || currentMonth)
+  const [selectedYear, setSelectedYear] = useState(currentYear)
+  const [selectedMonth, setSelectedMonth] = useState(currentMonthNumber)
   const [rows, setRows] = useState<FormRowData[]>(existingEntry?.rows || [])
   const [currentRow, setCurrentRow] = useState<FormRowData>(existingEntry?.rows[0] || createEmptyRow())
   const [selectedRowId, setSelectedRowId] = useState(existingEntry?.rows[0]?.id || "")
@@ -160,11 +168,22 @@ export default function FormFillingPage() {
       }
       return [...prev, currentRow]
     })
-    setSelectedRowId(currentRow.id)
+    setCurrentRow(createEmptyRow())
+    setSelectedRowId("")
     setSaved(false)
   }
 
+  function currentRowHasTypedData() {
+    return Object.values(currentRow.values).some((value) => value !== "" && value !== null && value !== undefined)
+  }
+
   function startNewRow() {
+    const rowNotInTable = !rows.some((row) => row.id === currentRow.id)
+    if (rowNotInTable && currentRowHasTypedData()) {
+      const confirmed = window.confirm("Tem certeza? Essa acao ira apagar todos os dados inseridos no registro atual.")
+      if (!confirmed) return
+    }
+
     const next = createEmptyRow()
     setCurrentRow(next)
     setSelectedRowId("")
@@ -200,6 +219,29 @@ export default function FormFillingPage() {
       return b.shift.localeCompare(a.shift)
     })
   }, [rows, filterTerm, sortBy])
+
+  const periodYears = useMemo(
+    () => Array.from(new Set(monthOptions.map((opt) => opt.value.split("-")[0]))).sort((a, b) => Number(b) - Number(a)),
+    [monthOptions]
+  )
+  const periodMonths = useMemo(
+    () => monthOptions.filter((opt) => opt.value.startsWith(`${selectedYear}-`)),
+    [monthOptions, selectedYear]
+  )
+
+  useEffect(() => {
+    const next = `${selectedYear}-${selectedMonth}`
+    if (period !== next) {
+      setPeriod(next)
+      setSaved(false)
+    }
+  }, [selectedYear, selectedMonth, period])
+
+  useEffect(() => {
+    const [year, month] = period.split("-")
+    if (year && year !== selectedYear) setSelectedYear(year)
+    if (month && month !== selectedMonth) setSelectedMonth(month)
+  }, [period, selectedYear, selectedMonth])
 
   function saveEntry(newStatus: "rascunho" | "em_revisao" = "rascunho") {
     if (!currentUser || !selectedVessel || !template) return
@@ -276,7 +318,7 @@ export default function FormFillingPage() {
     }
   }
 
-    if (!template) {
+  if (!template) {
     return (
       <div className="flex flex-col items-center gap-4 p-8">
         <p className="text-muted-foreground">Formulario nao encontrado</p>
@@ -317,27 +359,41 @@ export default function FormFillingPage() {
       </div>
 
       {/* Period selector */}
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium">Periodo</label>
-        <Select
-          value={period}
-          onValueChange={(v) => {
-            setPeriod(v)
-            setSaved(false)
-          }}
-          disabled={isReadOnly}
-        >
-          <SelectTrigger className="select-none">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {monthOptions.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium">Ano</label>
+          <Select value={selectedYear} onValueChange={setSelectedYear} disabled={isReadOnly}>
+            <SelectTrigger className="select-none">
+              <SelectValue placeholder="Ano" />
+            </SelectTrigger>
+            <SelectContent>
+              {periodYears.map((year) => (
+                <SelectItem key={year} value={year}>
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium">Mes</label>
+          <Select
+            value={`${selectedYear}-${selectedMonth}`}
+            onValueChange={(value) => setSelectedMonth(value.split("-")[1])}
+            disabled={isReadOnly}
+          >
+            <SelectTrigger className="select-none">
+              <SelectValue placeholder="Mes" />
+            </SelectTrigger>
+            <SelectContent>
+              {periodMonths.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Revisada notice */}
@@ -408,6 +464,17 @@ export default function FormFillingPage() {
       <Card>
         <CardHeader className="gap-3">
           <CardTitle className="text-base">Tabela de registros</CardTitle>
+          {!isReadOnly && (
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button className="select-none gap-2" onClick={upsertCurrentRow}>
+                <Plus className="h-4 w-4" />
+                Adicionar Registro
+              </Button>
+              <Button variant="outline" className="select-none" onClick={startNewRow}>
+                Novo Registro
+              </Button>
+            </div>
+          )}
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <input
               className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
@@ -448,7 +515,7 @@ export default function FormFillingPage() {
                     onClick={() => !isReadOnly && selectRow(row.id)}
                   >
                     <td className="px-3 py-2">{index + 1}</td>
-                    <td className="px-3 py-2">{row.date || "-"}</td>
+                    <td className="px-3 py-2">{formatDateBr(row.date)}</td>
                     <td className="px-3 py-2">{row.time || "-"}</td>
                     <td className="px-3 py-2">{row.shift || "-"}</td>
                     <td className="px-3 py-2">{Object.values(row.values).filter((value) => value !== "" && value !== null && value !== undefined).length}</td>
@@ -466,18 +533,6 @@ export default function FormFillingPage() {
           </div>
         </CardContent>
       </Card>
-
-      {!isReadOnly && (
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Button className="select-none gap-2" onClick={upsertCurrentRow}>
-            <Plus className="h-4 w-4" />
-            Adicionar Registro
-          </Button>
-          <Button variant="outline" className="select-none" onClick={startNewRow}>
-            Novo Registro
-          </Button>
-        </div>
-      )}
 
       {rows.length === 0 && (
         <Card className="border-amber-500/20 bg-amber-500/5">
