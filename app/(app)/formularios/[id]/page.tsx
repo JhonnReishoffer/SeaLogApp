@@ -507,7 +507,7 @@ export default function FormFillingPage() {
               <thead className="bg-muted/40 text-left">
                 <tr>
                   <th className="px-3 py-2 font-medium">#</th>
-                  <th className="px-3 py-2 font-medium">Data</th>
+                  <th className="px-3 py-2 font-medium">Data do Registro</th>
                   <th className="px-3 py-2 font-medium">Hora</th>
                   <th className="px-3 py-2 font-medium">Turno</th>
                   {rowPreviewFields.map((field) => (
